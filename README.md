@@ -31,10 +31,19 @@ pip install -r requirements.txt
 ```json
 {
   "myges": {
-    "username": "votre_identifiant",
-    "password": "votre_mot_de_passe"
+    "username": "YOUR_USERNAME_HERE",
+    "password": "YOUR_PASSWORD_HERE"
+  },
+  "email": {
+    "smtp_server": "YOUR_SMTP_SERVER_HERE",
+    "username": "YOUR_EMAIL_USERNAME_HERE",
+    "password": "YOUR_EMAIL_PASSWORD_HERE"
+  },
+  "google_calendar": {
+    "api_key": "YOUR_GOOGLE_CALENDAR_API_KEY_HERE"
   }
-} 
+}
+
 ```
 
 ## Utilisation
