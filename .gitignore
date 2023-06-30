@@ -291,7 +291,7 @@ poetry.toml
 # ruff
 .ruff_cache/
 
-# LSP config files
+# LSP utils files
 pyrightconfig.json
 
 ### VisualStudioCode ###
@@ -323,10 +323,7 @@ ehthumbs_vista.db
 # Dump file
 *.stackdump
 
-# Configuration files for MyGes
-config.json
-
-# Folder config file
+# Folder utils file
 [Dd]esktop.ini
 
 # Recycle Bin used on file shares
@@ -341,5 +338,14 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Configuration files for MyGes
+config.json
+
+# Logs folder
+logs/
+
+# Logs files
+*.log
 
 # End of https://www.toptal.com/developers/gitignore/api/python,windows,macos,intellij+all,visualstudiocode

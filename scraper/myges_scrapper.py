@@ -6,8 +6,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from scraper.selenium_utils import wait_for_element
 
+from utils.logger_utils import get_logger
 
 class MyGesScraper:
+    logger = get_logger()
     def __init__(self, driver, username, password):
         self.driver = driver
         self.username = username
@@ -30,6 +32,6 @@ class MyGesScraper:
             print('Login failed')
             return False
         else:
-            print('Login successful, current url is: ' + self.driver.current_url)
+            self.logger.info('Login successful, current url is: ' + self.driver.current_url)
             time.sleep(5)
             return True
