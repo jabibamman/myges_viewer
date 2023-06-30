@@ -12,7 +12,8 @@ def initialise_selenium(headless=True):
     chrome_options = Options()
     if headless:
         chrome_options.add_argument("--headless")
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver = webdriver.Chrome(chrome_options=chrome_options, executable_path=ChromeDriverManager().install())
+
     return driver
 
 
