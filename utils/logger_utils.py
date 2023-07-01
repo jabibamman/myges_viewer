@@ -22,7 +22,7 @@ def get_logger():
     if not os.path.exists('logs/'):
         os.makedirs('logs/')
 
-    file_handler = logging.FileHandler(f"logs/{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log")
+    file_handler = logging.FileHandler(f"logs/{datetime.now().strftime('%Y-%m-%d')}.log")
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
 
