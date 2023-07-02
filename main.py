@@ -8,8 +8,8 @@ driver = initialise_selenium()
 scraper = MyGesScraper(driver, username, password)
 
 scraper.login()
-schedule = scraper.get_schedule()
-#print(schedule)
+schedule = scraper.get_schedule(to_Console=True)
+
 # grades = scraper.get_grades()
 # contacts = scraper.get_contacts()
 

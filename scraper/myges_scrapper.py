@@ -1,18 +1,19 @@
+import json
 from datetime import datetime
+import re
 import time
 
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from scraper.selenium_utils import wait_for_element
 
-from utils.logger_utils import get_logger
-from utils.schedule_utils import get_jours_de_la_semaine_json, get_jours_de_la_semaine
+from utils import schedule_utils as su
+from utils import logger_utils as log
+from utils import global_utils as util
 
 
 class MyGesScraper:
-    logger = get_logger()
+    logger = log.get_logger()
 
     def __init__(self, driver, username, password):
         self.driver = driver
@@ -38,49 +39,58 @@ class MyGesScraper:
             self.logger.info('Login successful, current url is: ' + self.driver.current_url)
             return True
 
+    def get_schedule(self, to_json=False, to_mongo=False, to_Console=False):
+        """
+        Récupère le planning de l'utilisateur
+        Les ID des boutons sont calendar : (previousMonth, nextMonth, currentDate)
+        :param to_json:
+        :param to_mongo:
+        :param to_Console:
+        :return:
+        """
 
-    def get_schedule(self):
         planning_link = self.driver.find_element_by_xpath('//a[contains(text(),"Plannings")]')
         planning_link.click()
         time.sleep(4)
 
         previousMonth = self.driver.find_element_by_id('calendar:previousMonth')
-        nextMonth = self.driver.find_element_by_id('calendar:nextMonth')
-        currentMonth = self.driver.find_element_by_id('calendar:currentDate')
-
         previousMonth.click()
-        time.sleep(4)
+        time.sleep(10)
 
         soup = BeautifulSoup(self.driver.page_source, 'html.parser')
-
-        div = soup.find('div', id='calendar:myschedule')
         thead = soup.find('thead')
 
-        get_jours_de_la_semaine_json(thead)
+        joursDeLaSemaine = su.get_jours_de_la_semaine(thead)
+        time.sleep(10)
+        px_day = su.get_event_lefts(soup, "fc-event")
+        px_week = su.get_jours_par_position(soup, "fc-event")
 
-        joursDeLaSemaine = get_jours_de_la_semaine(thead)
+        px_day_without_duplicates = list(dict.fromkeys(px_day))
 
-        event_titles = [tag.text for tag in div.find_all(class_="fc-event-title")]
-        event_times = [tag.text for tag in div.find_all(class_="fc-event-time")]
+        for i in range(len(px_day_without_duplicates)):
+            if px_day[i] is None:
+                px_day[i] = px_day_without_duplicates[i]
 
-        combined = list(zip(event_times, event_titles))  # tuples (time, title)
+        event_titles, event_times = su.get_event_data(soup)
+        combined = su.get_combined_data(event_times, event_titles, px_day)
 
-        current_date_index = 0
+        px_to_weekday = {str(px): weekday for weekday, px in px_week.items()}
 
-        with open("data/semaine_de_cours.json", "w") as f:
-            f.write(joursDeLaSemaine[current_date_index] + '\n')
-            end_time_previous = datetime.strptime('00:00',
-                                                  "%H:%M")  # initialization with a time guaranteed to be earlier
+        final_dict = su.build_final_dict(combined, px_to_weekday, joursDeLaSemaine)
+        final_dict = su.sort_final_dict(final_dict)
 
-            for i in range(len(combined)):
-                start_time_current, end_time_current = [datetime.strptime(t.strip(), "%H:%M") for t in
-                                                        combined[i][0].split('-')]
-                if start_time_current < end_time_previous:
-                    current_date_index += 1
-                    if current_date_index >= len(joursDeLaSemaine):  # prevent index out of range error
-                        break
-                    f.write(joursDeLaSemaine[current_date_index] + '\n')
+        if to_json:
+            su.write_to_json(final_dict,
+                             f"semaine_du_{joursDeLaSemaine.get(px_to_weekday.get(px_day[0])).replace('/', '_')}.json")
 
-                f.write(combined[i][0] + ' ' + combined[i][1] + '\n')
+        if to_mongo:
+            # su.write_to_mongo(final_dict) # TODO: not implemented yet
+            pass
 
-                end_time_previous = end_time_current
+        if to_Console:
+            # TODO: not done yet
+            print(final_dict)
+            #util.write_to_console(final_dict)
+
+
+
