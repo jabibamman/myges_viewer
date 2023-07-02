@@ -39,6 +39,13 @@ def click_element(driver, by, value):
 
 
 def get_element_text(driver, by, value):
+    """
+    If element is found, return its text, else return None
+    :param driver:
+    :param by:
+    :param value:
+    :return:
+    """
     try:
         element = wait_for_element(driver, by, value)
         if element is not None:
