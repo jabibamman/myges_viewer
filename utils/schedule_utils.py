@@ -1,8 +1,14 @@
 import json
+import time
 from datetime import datetime
 import re
 
-from utils import json_utils as json
+from selenium.common.exceptions import ElementClickInterceptedException
+
+from scraper.selenium_utils import get_element_text, click_element
+from utils import json_utils
+from selenium.webdriver.common.by import By
+from utils import logger_utils as log
 
 
 def get_jours_de_la_semaine(thead):
@@ -72,18 +78,25 @@ def get_combined_data(event_times, event_titles, px_day):
     return list(zip(event_times, event_titles, px_day))
 
 
-def build_final_dict(combined, px_to_weekday, joursDeLaSemaine):
+def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
     final_dict = {}
     for event_time, event_title, event_px in combined:
+        log.get_logger().debug(f"event_time: {event_time}, event_title: {event_title}, event_px: {event_px}")
+        matiere, duration, intervenant, salle, type, modality = get_course_details(driver, event_title, event_time, event_px)
+
         day = f"{px_to_weekday.get(event_px)} - {joursDeLaSemaine.get(px_to_weekday.get(event_px))}"
 
         if day:
             if day not in final_dict:
                 final_dict[day] = []
             final_dict[day].append({
-                'name': event_title,
+                'name': matiere,
+                'intervenant': intervenant,
+                'salle': salle,
                 'start': event_time.split('-')[0].strip(),
                 'end': event_time.split('-')[1].strip(),
+                'type': type,
+                'modality': modality,
                 'sizePX': event_px
             })
 
@@ -100,4 +113,49 @@ def write_to_json(final_dict, filename):
     with open(f"data/{filename}", "w") as f:
         json.dump(final_dict, f, indent=4)
 
+
+def get_course_details(driver, event_title, event_time, event_px):
+    """Get course details."""
+
+    events = driver.find_elements(By.XPATH, f"//div[starts-with(@class, 'fc-event') and contains(@style, 'left: {event_px};')]")
+    for event in events:
+        event_title_element = event.find_element(By.XPATH, ".//div[@class='fc-event-title']")
+        if event_title_element and event_title_element.text.split('...', 1)[0] + '...' == event_title.split('...', 1)[0] + '...':
+            event_time_element = event.find_element(By.XPATH, ".//div[@class='fc-event-time']")
+            if event_time_element and event_time in event_time_element.text:
+                try:
+                    log.get_logger().info(event.get_attribute('innerHTML'))
+                    time.sleep(1)
+                    # TODO: doublon bug
+                   # driver.execute_script("arguments[0].click();", event)
+                    event.click()
+                except ElementClickInterceptedException:
+                    # afficher le html de lelement
+                    log.get_logger().debug(event.get_attribute('innerHTML'))
+                    time.sleep(1)
+                   # click_element(driver, By.XPATH, ".//div[@class='fc-event']")
+                    driver.execute_script("arguments[0].click();", event)
+                   # event.click()
+
+
+                time.sleep(1)
+
+                matiere = driver.find_element(By.XPATH, "//span[@id='matiere']")
+                duration = driver.find_element(By.XPATH, "//span[@id='duration']")
+                intervenant = driver.find_element(By.XPATH, "//span[@id='intervenant']")
+                salle = driver.find_element(By.XPATH, "//span[@id='salle']")
+                type = driver.find_element(By.XPATH, "//span[@id='type']")
+                modality = driver.find_element(By.XPATH, "//span[@id='modality']")
+                commentaire = driver.find_element(By.XPATH, "//span[@id='commentaire']")
+
+                log.get_logger().info("____________________")
+                log.get_logger().info(f"Matiere : {matiere.text}")
+                log.get_logger().info(f"Duration : {duration.text}")
+                log.get_logger().info(f"Intervenant : {intervenant.text}")
+                log.get_logger().info(f"Salle : {salle.text}")
+                log.get_logger().info(f"Type : {type.text}")
+                log.get_logger().info(f"Modality : {modality.text}")
+                log.get_logger().info("____________________")
+
+                return matiere.text, duration.text, intervenant.text, salle.text, type.text, modality.text
 

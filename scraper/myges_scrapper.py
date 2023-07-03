@@ -39,7 +39,7 @@ class MyGesScraper:
             self.logger.info('Login successful, current url is: ' + self.driver.current_url)
             return True
 
-    def get_schedule(self, to_json=False, to_mongo=False, to_Console=False):
+    def get_schedule(self, to_json=True, to_mongo=False, to_Console=False):
         """
         Récupère le planning de l'utilisateur
         Les ID des boutons sont calendar : (previousMonth, nextMonth, currentDate)
@@ -76,7 +76,7 @@ class MyGesScraper:
 
         px_to_weekday = {str(px): weekday for weekday, px in px_week.items()}
 
-        final_dict = su.build_final_dict(combined, px_to_weekday, joursDeLaSemaine)
+        final_dict = su.build_final_dict(self.driver, combined, px_to_weekday, joursDeLaSemaine)
         final_dict = su.sort_final_dict(final_dict)
 
         if to_json:
