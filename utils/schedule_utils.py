@@ -81,8 +81,7 @@ def get_combined_data(event_times, event_titles, px_day):
 def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
     final_dict = {}
     for event_time, event_title, event_px in combined:
-        log.get_logger().debug(f"event_time: {event_time}, event_title: {event_title}, event_px: {event_px}")
-        matiere, duration, intervenant, salle, type, modality = get_course_details(driver, event_title, event_time, event_px)
+        matiere, duration, intervenant, salle, type, modality, commentaire = get_course_details(driver, event_title, event_time, event_px)
 
         day = f"{px_to_weekday.get(event_px)} - {joursDeLaSemaine.get(px_to_weekday.get(event_px))}"
 
@@ -97,6 +96,7 @@ def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
                 'end': event_time.split('-')[1].strip(),
                 'type': type,
                 'modality': modality,
+                'commentaire': commentaire,
                 'sizePX': event_px
             })
 
@@ -110,6 +110,7 @@ def sort_final_dict(final_dict):
 
 
 def write_to_json(final_dict, filename):
+    log.get_logger().info(f"Writing data to {filename}")
     with open(f"data/{filename}", "w") as f:
         json.dump(final_dict, f, indent=4)
 
@@ -124,22 +125,15 @@ def get_course_details(driver, event_title, event_time, event_px):
             event_time_element = event.find_element(By.XPATH, ".//div[@class='fc-event-time']")
             if event_time_element and event_time in event_time_element.text:
                 try:
-                    log.get_logger().info(event.get_attribute('innerHTML'))
                     time.sleep(1)
-                    # TODO: doublon bug
-                   # driver.execute_script("arguments[0].click();", event)
                     event.click()
                 except ElementClickInterceptedException:
-                    # afficher le html de lelement
-                    log.get_logger().debug(event.get_attribute('innerHTML'))
-                    time.sleep(1)
-                   # click_element(driver, By.XPATH, ".//div[@class='fc-event']")
-                    driver.execute_script("arguments[0].click();", event)
-                   # event.click()
-
+                    div = driver.find_element(By.XPATH, "//div[@id='j_idt174']")
+                    a = div.find_element(By.XPATH, ".//a")
+                    a.click()
+                    event.click()
 
                 time.sleep(1)
-
                 matiere = driver.find_element(By.XPATH, "//span[@id='matiere']")
                 duration = driver.find_element(By.XPATH, "//span[@id='duration']")
                 intervenant = driver.find_element(By.XPATH, "//span[@id='intervenant']")
@@ -147,15 +141,6 @@ def get_course_details(driver, event_title, event_time, event_px):
                 type = driver.find_element(By.XPATH, "//span[@id='type']")
                 modality = driver.find_element(By.XPATH, "//span[@id='modality']")
                 commentaire = driver.find_element(By.XPATH, "//span[@id='commentaire']")
-
-                log.get_logger().info("____________________")
-                log.get_logger().info(f"Matiere : {matiere.text}")
-                log.get_logger().info(f"Duration : {duration.text}")
-                log.get_logger().info(f"Intervenant : {intervenant.text}")
-                log.get_logger().info(f"Salle : {salle.text}")
-                log.get_logger().info(f"Type : {type.text}")
-                log.get_logger().info(f"Modality : {modality.text}")
-                log.get_logger().info("____________________")
 
                 return matiere.text, duration.text, intervenant.text, salle.text, type.text, modality.text
 
