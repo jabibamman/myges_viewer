@@ -1,4 +1,5 @@
 import json
+import locale
 from datetime import datetime
 import re
 import time
@@ -39,13 +40,14 @@ class MyGesScraper:
             self.logger.info('Login successful, current url is: ' + self.driver.current_url)
             return True
 
-    def get_schedule(self, to_json=True, to_mongo=False, to_Console=False):
+    def get_schedule(self, to_json=True, to_mongo=False, to_Console=False, startOfTheYear=True):
         """
         Récupère le planning de l'utilisateur
         Les ID des boutons sont calendar : (previousMonth, nextMonth, currentDate)
         :param to_json:
         :param to_mongo:
         :param to_Console:
+        :param left:
         :return:
         """
 
@@ -53,44 +55,74 @@ class MyGesScraper:
         planning_link.click()
         time.sleep(4)
 
-        previousMonth = self.driver.find_element_by_id('calendar:previousMonth')
-        previousMonth.click()
-        time.sleep(10)
+        locale.setlocale(locale.LC_TIME, "fr_FR.utf8")
+        current_week_label = self.driver.find_element_by_id('calendar:currentWeek').text
+        current_week_start = current_week_label.split('-')[0].strip() + " 2023"
+        current_week_start = datetime.strptime(current_week_start, '%d %B %Y')
 
-        soup = BeautifulSoup(self.driver.page_source, 'html.parser')
-        thead = soup.find('thead')
+        start_date = datetime(current_week_start.year, 1, 1) if startOfTheYear else current_week_start
+        end_date = datetime(current_week_start.year, 8, 31) if not startOfTheYear else current_week_start
 
-        joursDeLaSemaine = su.get_jours_de_la_semaine(thead)
-        time.sleep(10)
-        px_day = su.get_event_lefts(soup, "fc-event")
-        px_week = su.get_jours_par_position(soup, "fc-event")
+        num_weeks = util.week_difference(start_date, end_date)
+        for _ in range(num_weeks):
+            self.logger.info('Weeks left: ' + str(num_weeks - _))
 
-        px_day_without_duplicates = list(dict.fromkeys(px_day))
+            if startOfTheYear:
+                navigation_button = self.driver.find_element_by_id('calendar:previousMonth')
+            else:
+                navigation_button = self.driver.find_element_by_id('calendar:nextMonth')
 
-        for i in range(len(px_day_without_duplicates)):
-            if px_day[i] is None:
-                px_day[i] = px_day_without_duplicates[i]
+            navigation_button.click()
+            time.sleep(10)
+            soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+            div = soup.find('div', id='calendar:myschedule')
 
-        event_titles, event_times = su.get_event_data(soup)
-        combined = su.get_combined_data(event_times, event_titles, px_day)
+            thead = soup.find('thead')
+            joursDeLaSemaine = su.get_jours_de_la_semaine(thead)
 
-        px_to_weekday = {str(px): weekday for weekday, px in px_week.items()}
+            formated_date = joursDeLaSemaine.get("Lundi").replace('/', '_')
 
-        final_dict = su.build_final_dict(self.driver, combined, px_to_weekday, joursDeLaSemaine)
-        final_dict = su.sort_final_dict(final_dict)
+            if not util.compare_html(div, "data/out/html/schedule_du_{}.html".format(formated_date)):
+                util.write_html(div, "data/out/html/schedule_du_{}.html".format(formated_date))
+            else:
+                continue
 
-        if to_json:
-            su.write_to_json(final_dict,
-                             f"semaine_du_{joursDeLaSemaine.get(px_to_weekday.get(px_day[0])).replace('/', '_')}.json")
+            time.sleep(10)
+            px_day = su.get_event_lefts(soup, "fc-event")
+            px_week = su.get_jours_par_position(soup, "fc-event")
 
-        if to_mongo:
-            # su.write_to_mongo(final_dict) # TODO: not implemented yet
-            pass
+            px_to_weekday = {str(px): weekday for weekday, px in px_week.items()}
 
-        if to_Console:
-            # TODO: not done yet
-            print(final_dict)
-            #util.write_to_console(final_dict)
+            final_dict = {}
 
+            if not px_day:
+                weekday = joursDeLaSemaine.get(px_to_weekday.get(px_day[0])) if px_day else None
+                if weekday is None:
+                    weekday = formated_date
+                su.write_to_json(final_dict,
+                                 f"out/semaine_du_{weekday.replace('/', '_')}.json")
+                continue
 
+            px_day_without_duplicates = list(dict.fromkeys(px_day))
 
+            for i in range(len(px_day_without_duplicates)):
+                if px_day[i] is None:
+                    px_day[i] = px_day_without_duplicates[i]
+
+            event_titles, event_times = su.get_event_data(soup)
+            combined = su.get_combined_data(event_times, event_titles, px_day)
+
+            final_dict = su.build_final_dict(self.driver, combined, px_to_weekday, joursDeLaSemaine)
+            final_dict = su.sort_final_dict(final_dict)
+
+            if to_json:
+                su.write_to_json(final_dict, "out/semaine_du_{}.json".format(formated_date))
+
+            if to_mongo:
+                # su.write_to_mongo(final_dict) # TODO: not implemented yet
+                pass
+
+            if to_Console:
+                # TODO: not done yet
+                print(final_dict)
+                # util.write_to_console(final_dict)

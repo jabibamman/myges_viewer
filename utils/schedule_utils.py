@@ -30,14 +30,14 @@ def get_jours_de_la_semaine_json(thead):
 
 def get_jours_par_position(soup, class_):
     """Get days position."""
-    jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-
-    jours_par_position = {jour: None for jour in jours}
+    jours, position = json_utils.read_json_as_lists("jours_par_position.json")
+    jours_avec_position = dict(zip(jours, position))
     event_lefts = list(dict.fromkeys(get_event_lefts(soup, class_)))
-
-    for jour in jours:
-        if jours_par_position[jour] is None and event_lefts:
-            jours_par_position[jour] = event_lefts.pop(0)
+    jours_par_position = {}
+    for jour, pos in jours_avec_position.items():
+        if event_lefts and pos in event_lefts:
+            jours_par_position[jour] = pos
+            event_lefts.remove(pos)
 
     return jours_par_position
 
@@ -80,10 +80,10 @@ def get_combined_data(event_times, event_titles, px_day):
 def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
     final_dict = {}
     for event_time, event_title, event_px in combined:
-        matiere, duration, intervenant, salle, type, modality = get_course_details(driver, event_title, event_time, event_px)
+        matiere, duration, intervenant, salle, type, modality = get_course_details(driver, event_title, event_time,
+                                                                                   event_px)
 
         day = f"{px_to_weekday.get(event_px)} - {joursDeLaSemaine.get(px_to_weekday.get(event_px))}"
-
         if day:
             if day not in final_dict:
                 final_dict[day] = []
@@ -102,6 +102,11 @@ def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
     return final_dict
 
 
+def get_px_from_day(day):
+    jours_par_position = json_utils.read_json("jours_par_position.json")
+    return jours_par_position.get(day)
+
+
 def sort_final_dict(final_dict):
     for day in final_dict:
         final_dict[day] = sorted(final_dict[day], key=lambda x: x['start'])
@@ -117,18 +122,24 @@ def write_to_json(final_dict, filename):
 def get_course_details(driver, event_title, event_time, event_px):
     """Get course details."""
 
-    events = driver.find_elements(By.XPATH, f"//div[starts-with(@class, 'fc-event') and contains(@style, 'left: {event_px};')]")
+    events = driver.find_elements(By.XPATH,
+                                  f"//div[starts-with(@class, 'fc-event') and contains(@style, 'left: {event_px};')]")
     for event in events:
         event_title_element = event.find_element(By.XPATH, ".//div[@class='fc-event-title']")
-        if event_title_element and event_title_element.text.split('...', 1)[0] + '...' == event_title.split('...', 1)[0] + '...':
+        if event_title_element and event_title_element.text.split('...', 1)[0] + '...' == event_title.split('...', 1)[
+            0] + '...':
             event_time_element = event.find_element(By.XPATH, ".//div[@class='fc-event-time']")
             if event_time_element and event_time in event_time_element.text:
                 try:
                     time.sleep(1)
                     event.click()
                 except ElementClickInterceptedException:
-                    div = driver.find_element(By.XPATH, "//div[@id='j_idt174']")
-                    a = div.find_element(By.XPATH, ".//a")
+                    elements = driver.find_elements_by_xpath("//*[starts-with(@id, 'j_idt17')]")
+                    matching_elements = [e for e in elements if re.match(r'j_idt17\d', e.get_attribute('id'))]
+
+                    if matching_elements:
+                        div = matching_elements[0]
+                        a = div.find_element(By.XPATH, ".//a")
                     a.click()
                     event.click()
 
@@ -142,4 +153,3 @@ def get_course_details(driver, event_title, event_time, event_px):
                 commentaire = driver.find_element(By.XPATH, "//span[@id='commentaire']")
 
                 return matiere.text, duration.text, intervenant.text, salle.text, type.text, modality.text
-
