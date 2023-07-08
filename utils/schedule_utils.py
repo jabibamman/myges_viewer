@@ -36,7 +36,6 @@ def get_jours_par_position(soup, class_):
     event_lefts = list(dict.fromkeys(get_event_lefts(soup, class_)))
 
     for jour in jours:
-
         if jours_par_position[jour] is None and event_lefts:
             jours_par_position[jour] = event_lefts.pop(0)
 
@@ -81,7 +80,7 @@ def get_combined_data(event_times, event_titles, px_day):
 def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
     final_dict = {}
     for event_time, event_title, event_px in combined:
-        matiere, duration, intervenant, salle, type, modality, commentaire = get_course_details(driver, event_title, event_time, event_px)
+        matiere, duration, intervenant, salle, type, modality = get_course_details(driver, event_title, event_time, event_px)
 
         day = f"{px_to_weekday.get(event_px)} - {joursDeLaSemaine.get(px_to_weekday.get(event_px))}"
 
@@ -96,7 +95,7 @@ def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
                 'end': event_time.split('-')[1].strip(),
                 'type': type,
                 'modality': modality,
-                'commentaire': commentaire,
+                'commentaire': "",
                 'sizePX': event_px
             })
 
