@@ -6,7 +6,7 @@ discord.py==1.7.3
 Flask==2.0.1
 Flask-RESTful==0.3.9
 icalendar==4.0.7
-PyQt5==5.15.4
+PyQt5
 google-api-python-client==2.11.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.4.4

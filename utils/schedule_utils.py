@@ -82,6 +82,8 @@ def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
     for event_time, event_title, event_px in combined:
         matiere, duration, intervenant, salle, type, modality = get_course_details(driver, event_title, event_time,
                                                                                    event_px)
+        if matiere == "" or intervenant == "":
+            continue
 
         day = f"{px_to_weekday.get(event_px)} - {joursDeLaSemaine.get(px_to_weekday.get(event_px))}"
         if day:
@@ -121,35 +123,42 @@ def write_to_json(final_dict, filename):
 
 def get_course_details(driver, event_title, event_time, event_px):
     """Get course details."""
-
     events = driver.find_elements(By.XPATH,
                                   f"//div[starts-with(@class, 'fc-event') and contains(@style, 'left: {event_px};')]")
     for event in events:
         event_title_element = event.find_element(By.XPATH, ".//div[@class='fc-event-title']")
-        if event_title_element and event_title_element.text.split('...', 1)[0] + '...' == event_title.split('...', 1)[
-            0] + '...':
-            event_time_element = event.find_element(By.XPATH, ".//div[@class='fc-event-time']")
-            if event_time_element and event_time in event_time_element.text:
-                try:
-                    time.sleep(1)
-                    event.click()
-                except ElementClickInterceptedException:
-                    elements = driver.find_elements_by_xpath("//*[starts-with(@id, 'j_idt17')]")
-                    matching_elements = [e for e in elements if re.match(r'j_idt17\d', e.get_attribute('id'))]
+        if not event_title_element:
+            continue
+        if event_title_element.text.split('...', 1)[0] + '...' != event_title.split('...', 1)[0] + '...':
+            continue
 
-                    if matching_elements:
-                        div = matching_elements[0]
-                        a = div.find_element(By.XPATH, ".//a")
-                    a.click()
-                    event.click()
+        event_time_element = event.find_element(By.XPATH, ".//div[@class='fc-event-time']")
+        if not event_time_element:
+            continue
+        if event_time not in event_time_element.text:
+            continue
 
-                time.sleep(1)
-                matiere = driver.find_element(By.XPATH, "//span[@id='matiere']")
-                duration = driver.find_element(By.XPATH, "//span[@id='duration']")
-                intervenant = driver.find_element(By.XPATH, "//span[@id='intervenant']")
-                salle = driver.find_element(By.XPATH, "//span[@id='salle']")
-                type = driver.find_element(By.XPATH, "//span[@id='type']")
-                modality = driver.find_element(By.XPATH, "//span[@id='modality']")
-                commentaire = driver.find_element(By.XPATH, "//span[@id='commentaire']")
+        try:
+            time.sleep(1)
+            event.click()
+        except ElementClickInterceptedException:
+            elements = driver.find_elements_by_xpath("//*[starts-with(@id, 'j_idt17')]")
+            matching_elements = [e for e in elements if re.match(r'j_idt17\d', e.get_attribute('id'))]
 
-                return matiere.text, duration.text, intervenant.text, salle.text, type.text, modality.text
+            if matching_elements:
+                div = matching_elements[0]
+                a = div.find_element(By.XPATH, ".//a")
+            a.click()
+            event.click()
+
+        time.sleep(1)
+        matiere = driver.find_element(By.XPATH, "//span[@id='matiere']")
+        duration = driver.find_element(By.XPATH, "//span[@id='duration']")
+        intervenant = driver.find_element(By.XPATH, "//span[@id='intervenant']")
+        salle = driver.find_element(By.XPATH, "//span[@id='salle']")
+        type = driver.find_element(By.XPATH, "//span[@id='type']")
+        modality = driver.find_element(By.XPATH, "//span[@id='modality']")
+        commentaire = driver.find_element(By.XPATH, "//span[@id='commentaire']")
+
+        return matiere.text, duration.text, intervenant.text, salle.text, type.text, modality.text
+    return "", "", "", "", "", ""
