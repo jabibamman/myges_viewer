@@ -117,7 +117,7 @@ def sort_final_dict(final_dict):
 
 def write_to_json(final_dict, filename):
     log.get_logger().info(f"Writing data to {filename}")
-    with open(f"data/{filename}", "w") as f:
+    with open(f"data/{filename}", "w", encoding='utf-8') as f:
         json.dump(final_dict, f, indent=4)
 
 
