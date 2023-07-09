@@ -348,4 +348,6 @@ logs/
 # Logs files
 *.log
 
+data/*/
+
 # End of https://www.toptal.com/developers/gitignore/api/python,windows,macos,intellij+all,visualstudiocode
