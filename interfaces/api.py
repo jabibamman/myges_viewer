@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, session
 from flask_restx import Api, Resource
 
 from scraper import initialise_selenium, MyGesScraper
@@ -9,6 +9,9 @@ api = Api(app)
 
 app = Flask(__name__)
 api = Api(app, version='1.0', title='MyGes API', description='A simple API to fetch MyGes data')
+
+app.config['SECRET_KEY'] = 'your-secret-key'
+app.config['SESSION_TYPE'] = 'filesystem'
 
 ns = api.namespace('myges', description='MyGes operations')
 
@@ -26,6 +29,8 @@ class Login(Resource):
         args = login_parser.parse_args()
         username = args.get('username')
         password = args.get('password')
+        session['username'] = username
+        session['password'] = password
         driver = initialise_selenium()
         scraper = MyGesScraper(driver, username, password)
         login = scraper.login()
@@ -43,4 +48,20 @@ class Login(Resource):
 @api.doc(params={'date_string': 'A date string in the format dd_mm_yyyy'})
 class Week(Resource):
     def get(self, date_string):
-        return get_week_schedule_json(date_string)
+        schedule = get_week_schedule_json(date_string)
+        if 404 in schedule:
+            if 'username' in session and 'password' in session:
+                username = session['username']
+                password = session['password']
+                driver = initialise_selenium()
+                scraper = MyGesScraper(driver, username, password)
+                login = scraper.login()
+
+                if login:
+                    schedule = scraper.get_schedule(to_json=False, to_mongo=True, to_Console=False,
+                                                    startOfTheYear=False, endOfTheYear=False,
+                                                    date_string=date_string)
+                    driver.quit()
+                    return schedule
+        else:
+            return schedule

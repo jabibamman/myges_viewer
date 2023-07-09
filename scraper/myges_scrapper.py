@@ -40,7 +40,8 @@ class MyGesScraper:
             self.logger.info('Login successful, current url is: ' + self.driver.current_url)
             return True
 
-    def get_schedule(self, to_json=True, to_mongo=False, to_Console=False, startOfTheYear=True):
+    def get_schedule(self, to_json=True, to_mongo=False, to_Console=False, startOfTheYear=False, endOfTheYear=False,
+                     date_string="17_07_23"):
         """
         Récupère le planning de l'utilisateur
         Les ID des boutons sont calendar : (previousMonth, nextMonth, currentDate)
@@ -51,6 +52,7 @@ class MyGesScraper:
         :return:
         """
 
+        # TODO, on load une seule fois sur le startOfTheYear (quand on a pas chargé les json), sinon on parcourt le endOfTheYear en le passant en False
         planning_link = self.driver.find_element_by_xpath('//a[contains(text(),"Plannings")]')
         planning_link.click()
         time.sleep(4)
@@ -73,18 +75,41 @@ class MyGesScraper:
                 self.logger.info('Json files found, skipping scraping for the start of the year')
                 return
 
+        if date_string:
+            target_date = datetime.strptime(date_string, "%d_%m_%y")
+            weeks_diff = util.week_difference(current_week_start, target_date)
+
+            log.get_logger().info('Weeks diff: ' + str(weeks_diff))
+            log.get_logger().info('Target date: ' + target_date.strftime("%d_%m_%y"))
+            log.get_logger().info('Current week start: ' + current_week_start.strftime("%d_%m_%y"))
+
+            if weeks_diff > 0:
+                navigation_button = self.driver.find_element_by_id('calendar:nextMonth')
+                for _ in range(weeks_diff):
+                    navigation_button.click()
+                    time.sleep(10)
+            elif weeks_diff < 0:
+                navigation_button = self.driver.find_element_by_id('calendar:previousMonth')
+                for _ in range(abs(weeks_diff)):
+                    navigation_button.click()
+                    time.sleep(10)
+
+            num_weeks = weeks_diff
+
         for _ in range(num_weeks):
             self.logger.info('Weeks left: ' + str(num_weeks - _))
 
             if startOfTheYear:
                 navigation_button = self.driver.find_element_by_id('calendar:previousMonth')
-            else:
+            elif endOfTheYear:
                 navigation_button = self.driver.find_element_by_id('calendar:nextMonth')
 
             if _ > 0:
                 navigation_button.click()
                 time.sleep(10)
-            else:
+            elif endOfTheYear:
+                log.get_logger().info('First week, skipping navigation')
+            elif date_string == current_week_start.strftime("%d_%m_%y"):
                 log.get_logger().info('First week, skipping navigation')
 
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
@@ -139,3 +164,5 @@ class MyGesScraper:
                 # TODO: not done yet
                 print(final_dict)
                 # util.write_to_console(final_dict)
+
+        return final_dict
