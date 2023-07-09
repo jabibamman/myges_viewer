@@ -1,4 +1,5 @@
 import json
+import os
 import time
 from datetime import datetime
 import re
@@ -9,6 +10,7 @@ from scraper.selenium_utils import get_element_text, click_element
 from utils import json_utils
 from selenium.webdriver.common.by import By
 from utils import logger_utils as log
+from utils.config_utils import username
 
 
 def get_jours_de_la_semaine(thead):
@@ -25,7 +27,7 @@ def get_jours_de_la_semaine(thead):
 def get_jours_de_la_semaine_json(thead):
     """Get days of the week and write them to a json file."""
     joursDeLaSemaine = get_jours_de_la_semaine(thead)
-    write_to_json(joursDeLaSemaine, "jours_de_la_semaine.json")
+    write_to_json(joursDeLaSemaine,"jours_de_la_semaine.json", directory="")
 
 
 def get_jours_par_position(soup, class_):
@@ -115,9 +117,12 @@ def sort_final_dict(final_dict):
     return final_dict
 
 
-def write_to_json(final_dict, filename):
+def write_to_json(final_dict, filename, directory="out", ):
     log.get_logger().info(f"Writing data to {filename}")
-    with open(f"data/{filename}", "w", encoding='utf-8') as f:
+    if not os.path.exists(f"data/{username}/{directory}"):
+        os.makedirs(f"data/{username}/{directory}")
+
+    with open(f"data/{username}/{directory}/{filename}", "w", encoding='utf-8') as f:
         json.dump(final_dict, f, indent=4)
 
 

@@ -1,8 +1,9 @@
+from datetime import datetime
 import os
 
 from bs4 import BeautifulSoup
-
 from utils import logger_utils as log
+from utils.config_utils import username
 
 
 def write_to_console(final_dict):
@@ -47,3 +48,29 @@ def write_html(soup, filename):
 
     with open(filename, 'w', encoding='utf-8') as file:
         file.write(html)
+
+
+def week_to_date_string(year, week_number):
+    date = datetime.strptime(f'{year} {week_number} 1', "%Y %W %w")
+    date_string = date.strftime("%d_%m_%y")
+    date_string = date_string.lstrip("0")
+    return date_string
+
+
+def date_string_to_week_number(year, date_string):
+    date = datetime.strptime(f'{year}_{date_string}', "%Y_%d_%m_%y")
+    week_number = int(date.strftime("%W"))
+    return week_number
+
+
+def check_existing_json_files_for_week_range(year, start_week, end_date_string):
+    end_week = date_string_to_week_number(year,
+                                          end_date_string) - 1  # -1 because we don't want to check the current week
+    for week in range(start_week, end_week):
+        date_string = week_to_date_string(year, week)
+        filename = f"data/{username}/schedule/semaine_du_{date_string}.json"
+
+        if not os.path.exists(filename):
+            return False
+
+    return True

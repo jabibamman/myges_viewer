@@ -64,6 +64,15 @@ class MyGesScraper:
         end_date = datetime(current_week_start.year, 8, 31) if not startOfTheYear else current_week_start
 
         num_weeks = util.week_difference(start_date, end_date)
+
+        if startOfTheYear:
+            current_week_start_string = current_week_start.strftime("%d_%m_%y")
+            if not util.check_existing_json_files_for_week_range(current_week_start.year, 1, current_week_start_string):
+                self.logger.info('No json files found, starting scraping')
+            else:
+                self.logger.info('Json files found, skipping scraping for the start of the year')
+                return
+
         for _ in range(num_weeks):
             self.logger.info('Weeks left: ' + str(num_weeks - _))
 
@@ -72,8 +81,12 @@ class MyGesScraper:
             else:
                 navigation_button = self.driver.find_element_by_id('calendar:nextMonth')
 
-            navigation_button.click()
-            time.sleep(10)
+            if _ > 0:
+                navigation_button.click()
+                time.sleep(10)
+            else:
+                log.get_logger().info('First week, skipping navigation')
+
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
             div = soup.find('div', id='calendar:myschedule')
 
@@ -100,7 +113,7 @@ class MyGesScraper:
                 if weekday is None:
                     weekday = formated_date
                 su.write_to_json(final_dict,
-                                 f"out/semaine_du_{weekday.replace('/', '_')}.json")
+                                 f"semaine_du_{weekday.replace('/', '_')}.json", directory="schedule")
                 continue
 
             px_day_without_duplicates = list(dict.fromkeys(px_day))
@@ -116,7 +129,7 @@ class MyGesScraper:
             final_dict = su.sort_final_dict(final_dict)
 
             if to_json:
-                su.write_to_json(final_dict, "out/semaine_du_{}.json".format(formated_date))
+                su.write_to_json(final_dict, "semaine_du_{}.json".format(formated_date), directory="schedule")
 
             if to_mongo:
                 # su.write_to_mongo(final_dict) # TODO: not implemented yet

@@ -12,3 +12,6 @@ def read_config():
         logger = get_logger()
         logger.error(f"Config file not found, please create a config.json file in the root directory")
         exit(1)
+
+
+username, password = read_config()
