@@ -1,16 +1,17 @@
-import json
 import locale
+import logging
 from datetime import datetime
-import re
 import time
 
 from bs4 import BeautifulSoup
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from scraper.selenium_utils import wait_for_element
 
 from utils import schedule_utils as su
 from utils import logger_utils as log
 from utils import global_utils as util
+from utils import directory_utils as du
 
 
 class MyGesScraper:
@@ -126,3 +127,18 @@ class MyGesScraper:
                 # TODO: not done yet
                 print(final_dict)
                 # util.write_to_console(final_dict)
+
+    def get_students_directory(self):
+        self.driver.get('https://myges.fr/student/student-directory')
+
+        du.get_current_directory(self.driver)
+
+        al_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
+        al_button.click()
+
+        du.get_current_directory(self.driver)
+
+        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y3_button.click()
+
+        du.get_current_directory(self.driver)

@@ -1,4 +1,3 @@
-import json
 import time
 from datetime import datetime
 import re
@@ -9,6 +8,7 @@ from scraper.selenium_utils import get_element_text, click_element
 from utils import json_utils
 from selenium.webdriver.common.by import By
 from utils import logger_utils as log
+from utils.global_utils import write_to_json
 
 
 def get_jours_de_la_semaine(thead):
@@ -113,12 +113,6 @@ def sort_final_dict(final_dict):
     for day in final_dict:
         final_dict[day] = sorted(final_dict[day], key=lambda x: x['start'])
     return final_dict
-
-
-def write_to_json(final_dict, filename):
-    log.get_logger().info(f"Writing data to {filename}")
-    with open(f"data/{filename}", "w") as f:
-        json.dump(final_dict, f, indent=4)
 
 
 def get_course_details(driver, event_title, event_time, event_px):
