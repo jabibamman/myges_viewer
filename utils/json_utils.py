@@ -15,3 +15,9 @@ def read_json_as_lists(file):
     with open("data/" + file, "r") as f:
         data = json.load(f)
     return list(data.keys()), list(data.values())
+
+
+def load_json(filename):
+    with open(filename, 'r') as f:
+        data = json.load(f)
+    return data

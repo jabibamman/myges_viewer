@@ -11,6 +11,7 @@ from utils import json_utils
 from selenium.webdriver.common.by import By
 from utils import logger_utils as log
 from utils.config_utils import username
+from utils.json_utils import load_json
 
 
 def get_jours_de_la_semaine(thead):
@@ -167,3 +168,14 @@ def get_course_details(driver, event_title, event_time, event_px):
 
         return matiere.text, duration.text, intervenant.text, salle.text, type.text, modality.text
     return "", "", "", "", "", ""
+
+def get_week_schedule_json(date_string):
+    date_string = date_string.replace("-", "_").replace(" ", "_").replace(":", "_")
+    date_string = date_string.lstrip("0")
+
+    filename = f"data/{username}/schedule/semaine_du_{date_string}.json"
+    if os.path.exists(filename):
+        data = load_json(filename)
+        return data, 200
+    else:
+        return {"error": "File does not exist"}, 404
