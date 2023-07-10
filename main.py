@@ -1,17 +1,15 @@
-from scraper.myges_scrapper import MyGesScraper
-from scraper.selenium_utils import initialise_selenium
-
+from interfaces.api import app
+from scraper import initialise_selenium, MyGesScraper
 from utils.config_utils import read_config
 
-username, password = read_config()
-driver = initialise_selenium()
-scraper = MyGesScraper(driver, username, password)
+if __name__ == '__main__':
+    app.run(debug=True)
 
-scraper.login()
-# schedule = scraper.get_schedule()
-directory = scraper.get_students_directory()
+    username, password = read_config()
+    driver = initialise_selenium()
+    scraper = MyGesScraper(driver, username, password)
 
-# grades = scraper.get_grades()
-# contacts = scraper.get_contacts()
+    scraper.login()
+    directory = scraper.get_students_directory()
 
-driver.quit()
+    driver.quit()

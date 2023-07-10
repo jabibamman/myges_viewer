@@ -1,17 +1,19 @@
 beautifulsoup4==4.9.3
 selenium==3.141.0
 requests==2.26.0
-jsonschema==3.2.0
-discord.py==1.7.3
+# jsonschema==3.2.0
+# discord.py==1.7.3
 Flask==2.0.1
+Werkzeug==2.0.1
 Flask-RESTful==0.3.9
-icalendar==4.0.7
+flask-restx==0.5.1
+# icalendar==4.0.7
 PyQt5
-google-api-python-client==2.11.0
-google-auth-httplib2==0.1.0
-google-auth-oauthlib==0.4.4
-google-auth==1.34.0
-httplib2==0.19.1
-oauthlib==3.1.1
-pytest==6.2.4
+# google-api-python-client==2.11.0
+# google-auth-httplib2==0.1.0
+# google-auth-oauthlib==0.4.4
+# google-auth==1.34.0
+# httplib2==0.19.1
+# oauthlib==3.1.1
+# pytest==6.2.4
 coloredlogs==15.0.1

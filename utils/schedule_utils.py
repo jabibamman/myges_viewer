@@ -1,3 +1,5 @@
+import json
+import os
 import time
 from datetime import datetime
 import re
@@ -9,6 +11,8 @@ from utils import json_utils
 from selenium.webdriver.common.by import By
 from utils import logger_utils as log
 from utils.global_utils import write_to_json
+from utils.config_utils import username
+from utils.json_utils import load_json
 
 
 def get_jours_de_la_semaine(thead):
@@ -25,7 +29,7 @@ def get_jours_de_la_semaine(thead):
 def get_jours_de_la_semaine_json(thead):
     """Get days of the week and write them to a json file."""
     joursDeLaSemaine = get_jours_de_la_semaine(thead)
-    write_to_json(joursDeLaSemaine, "jours_de_la_semaine.json")
+    write_to_json(joursDeLaSemaine,"jours_de_la_semaine.json", directory="")
 
 
 def get_jours_par_position(soup, class_):
@@ -115,6 +119,15 @@ def sort_final_dict(final_dict):
     return final_dict
 
 
+def write_to_json(final_dict, filename, directory="out", ):
+    log.get_logger().info(f"Writing data to {filename}")
+    if not os.path.exists(f"data/{username}/{directory}"):
+        os.makedirs(f"data/{username}/{directory}")
+
+    with open(f"data/{username}/{directory}/{filename}", "w", encoding='utf-8') as f:
+        json.dump(final_dict, f, indent=4)
+
+
 def get_course_details(driver, event_title, event_time, event_px):
     """Get course details."""
     events = driver.find_elements(By.XPATH,
@@ -156,3 +169,14 @@ def get_course_details(driver, event_title, event_time, event_px):
 
         return matiere.text, duration.text, intervenant.text, salle.text, type.text, modality.text
     return "", "", "", "", "", ""
+
+def get_week_schedule_json(date_string):
+    date_string = date_string.replace("-", "_").replace(" ", "_").replace(":", "_")
+    date_string = date_string.lstrip("0")
+
+    filename = f"data/{username}/schedule/semaine_du_{date_string}.json"
+    if os.path.exists(filename):
+        data = load_json(filename)
+        return data, 200
+    else:
+        return {"error": "File does not exist"}, 404

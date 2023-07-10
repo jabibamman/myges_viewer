@@ -1,10 +1,8 @@
 import locale
-import logging
 from datetime import datetime
 import time
 
 from bs4 import BeautifulSoup
-from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from scraper.selenium_utils import wait_for_element
 
@@ -41,7 +39,8 @@ class MyGesScraper:
             self.logger.info('Login successful, current url is: ' + self.driver.current_url)
             return True
 
-    def get_schedule(self, to_json=True, to_mongo=False, to_Console=False, startOfTheYear=True):
+    def get_schedule(self, to_json=True, to_mongo=False, to_Console=False, startOfTheYear=False, endOfTheYear=False,
+                     date_string="17_07_23"):
         """
         Récupère le planning de l'utilisateur
         Les ID des boutons sont calendar : (previousMonth, nextMonth, currentDate)
@@ -52,6 +51,7 @@ class MyGesScraper:
         :return:
         """
 
+        # TODO, on load une seule fois sur le startOfTheYear (quand on a pas chargé les json), sinon on parcourt le endOfTheYear en le passant en False
         planning_link = self.driver.find_element_by_xpath('//a[contains(text(),"Plannings")]')
         planning_link.click()
         time.sleep(4)
@@ -65,16 +65,52 @@ class MyGesScraper:
         end_date = datetime(current_week_start.year, 8, 31) if not startOfTheYear else current_week_start
 
         num_weeks = util.week_difference(start_date, end_date)
+
+        if startOfTheYear:
+            current_week_start_string = current_week_start.strftime("%d_%m_%y")
+            if not util.check_existing_json_files_for_week_range(current_week_start.year, 1, current_week_start_string):
+                self.logger.info('No json files found, starting scraping')
+            else:
+                self.logger.info('Json files found, skipping scraping for the start of the year')
+                return
+
+        if date_string:
+            target_date = datetime.strptime(date_string, "%d_%m_%y")
+            weeks_diff = util.week_difference(current_week_start, target_date)
+
+            log.get_logger().info('Weeks diff: ' + str(weeks_diff))
+            log.get_logger().info('Target date: ' + target_date.strftime("%d_%m_%y"))
+            log.get_logger().info('Current week start: ' + current_week_start.strftime("%d_%m_%y"))
+
+            if weeks_diff > 0:
+                navigation_button = self.driver.find_element_by_id('calendar:nextMonth')
+                for _ in range(weeks_diff):
+                    navigation_button.click()
+                    time.sleep(10)
+            elif weeks_diff < 0:
+                navigation_button = self.driver.find_element_by_id('calendar:previousMonth')
+                for _ in range(abs(weeks_diff)):
+                    navigation_button.click()
+                    time.sleep(10)
+
+            num_weeks = weeks_diff
+
         for _ in range(num_weeks):
             self.logger.info('Weeks left: ' + str(num_weeks - _))
 
             if startOfTheYear:
                 navigation_button = self.driver.find_element_by_id('calendar:previousMonth')
-            else:
+            elif endOfTheYear:
                 navigation_button = self.driver.find_element_by_id('calendar:nextMonth')
 
-            navigation_button.click()
-            time.sleep(10)
+            if _ > 0:
+                navigation_button.click()
+                time.sleep(10)
+            elif endOfTheYear:
+                log.get_logger().info('First week, skipping navigation')
+            elif date_string == current_week_start.strftime("%d_%m_%y"):
+                log.get_logger().info('First week, skipping navigation')
+
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
             div = soup.find('div', id='calendar:myschedule')
 
@@ -101,7 +137,7 @@ class MyGesScraper:
                 if weekday is None:
                     weekday = formated_date
                 su.write_to_json(final_dict,
-                                 f"out/semaine_du_{weekday.replace('/', '_')}.json")
+                                 f"semaine_du_{weekday.replace('/', '_')}.json", directory="schedule")
                 continue
 
             px_day_without_duplicates = list(dict.fromkeys(px_day))
@@ -117,7 +153,7 @@ class MyGesScraper:
             final_dict = su.sort_final_dict(final_dict)
 
             if to_json:
-                su.write_to_json(final_dict, "out/semaine_du_{}.json".format(formated_date))
+                su.write_to_json(final_dict, "semaine_du_{}.json".format(formated_date), directory="schedule")
 
             if to_mongo:
                 # su.write_to_mongo(final_dict) # TODO: not implemented yet
@@ -127,6 +163,8 @@ class MyGesScraper:
                 # TODO: not done yet
                 print(final_dict)
                 # util.write_to_console(final_dict)
+
+        return final_dict
 
     def get_students_directory(self):
         self.driver.get('https://myges.fr/student/student-directory')

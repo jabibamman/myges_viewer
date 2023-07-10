@@ -1,9 +1,10 @@
 import json
+from datetime import datetime
 import os
 
 from bs4 import BeautifulSoup
-
 from utils import logger_utils as log
+from utils.config_utils import username
 
 
 def write_to_console(final_dict):
@@ -53,3 +54,9 @@ def write_to_json(final_dict, filename):
     log.get_logger().info(f"Writing data to {filename}")
     with open(f"data/{filename}", 'w', encoding='utf-8') as f:
         json.dump(final_dict, f, indent=4)
+
+
+def week_to_date_string(year, week_number):
+    date = datetime.strptime(f'{year} {week_number} 1', "%Y %W %w")
+    date_string = date.strftime("%d_%m_%y")
+    date_string = date_string.lstrip("0")
