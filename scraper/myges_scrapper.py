@@ -131,6 +131,37 @@ class MyGesScraper:
     def get_students_directory(self):
         self.driver.get('https://myges.fr/student/student-directory')
 
+        active_button = wait_for_element(self.driver, By.CSS_SELECTOR, 'div.ui-state-active')
+
+        du.get_current_directory(self.driver)
+
+        al_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
+        al_button.click()
+
+        du.get_current_directory(self.driver)
+
+        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y3_button.click()
+
+        du.get_current_directory(self.driver)
+
+        unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
+        unfold_button.click()
+        grade4_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(1)')
+        grade4_select.click()
+
+        du.get_current_directory(self.driver)
+
+        y4_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y4_button.click()
+
+        du.get_current_directory(self.driver)
+
+        unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
+        unfold_button.click()
+        grade3_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(3)')
+        grade3_select.click()
+
         du.get_current_directory(self.driver)
 
         al_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
