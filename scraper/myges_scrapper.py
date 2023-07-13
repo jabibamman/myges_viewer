@@ -10,6 +10,7 @@ from utils import schedule_utils as su
 from utils import logger_utils as log
 from utils import global_utils as util
 from utils import directory_utils as du
+from utils.global_utils import write_to_json
 
 
 class MyGesScraper:
@@ -171,43 +172,56 @@ class MyGesScraper:
 
         active_button = wait_for_element(self.driver, By.CSS_SELECTOR, 'div.ui-state-active')
 
-        du.get_current_directory(self.driver)
+        arr = du.get_current_directory(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL2_2s.json')
 
-        al_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
+        al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
         al_button.click()
 
-        du.get_current_directory(self.driver)
+        arr = du.get_current_directory(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL_2s.json')
 
-        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y3_button.click()
 
-        du.get_current_directory(self.driver)
+        arr = du.get_current_directory(self.driver)
+        write_to_json({"students": arr}, 'directory/3ESGI_2s.json')
 
         unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
         unfold_button.click()
         grade4_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(1)')
         grade4_select.click()
 
-        du.get_current_directory(self.driver)
+        arr = du.get_current_directory(self.driver)
+        write_to_json({"students": arr}, 'directory/4AL.json')
 
-        y4_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y4_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y4_button.click()
 
-        du.get_current_directory(self.driver)
+        arr = du.get_current_directory(self.driver)
+        write_to_json({"students": arr}, 'directory/4ESGI.json')
 
         unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
         unfold_button.click()
         grade3_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(3)')
         grade3_select.click()
 
-        du.get_current_directory(self.driver)
+        arr = du.get_current_directory(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL2_1s.json')
 
-        al_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
+        al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
         al_button.click()
 
-        du.get_current_directory(self.driver)
+        arr = du.get_current_directory(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL_1s.json')
 
-        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR, '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y3_button.click()
 
-        du.get_current_directory(self.driver)
+        arr = du.get_current_directory(self.driver)
+        write_to_json({"students": arr}, 'directory/3ESGI_1s.json')
