@@ -172,21 +172,21 @@ class MyGesScraper:
 
         active_button = wait_for_element(self.driver, By.CSS_SELECTOR, 'div.ui-state-active')
 
-        arr = du.get_current_directory(self.driver)
+        arr = du.get_students_info(self.driver)
         write_to_json({"students": arr}, 'directory/3AL2_2s.json')
 
         al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
         al_button.click()
 
-        arr = du.get_current_directory(self.driver)
+        arr = du.get_students_info(self.driver)
         write_to_json({"students": arr}, 'directory/3AL_2s.json')
 
         y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y3_button.click()
 
-        arr = du.get_current_directory(self.driver)
+        arr = du.get_students_info(self.driver)
         write_to_json({"students": arr}, 'directory/3ESGI_2s.json')
 
         unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
@@ -194,14 +194,14 @@ class MyGesScraper:
         grade4_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(1)')
         grade4_select.click()
 
-        arr = du.get_current_directory(self.driver)
+        arr = du.get_students_info(self.driver)
         write_to_json({"students": arr}, 'directory/4AL.json')
 
         y4_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y4_button.click()
 
-        arr = du.get_current_directory(self.driver)
+        arr = du.get_students_info(self.driver)
         write_to_json({"students": arr}, 'directory/4ESGI.json')
 
         unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
@@ -209,19 +209,25 @@ class MyGesScraper:
         grade3_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(3)')
         grade3_select.click()
 
-        arr = du.get_current_directory(self.driver)
+        arr = du.get_students_info(self.driver)
         write_to_json({"students": arr}, 'directory/3AL2_1s.json')
 
         al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
         al_button.click()
 
-        arr = du.get_current_directory(self.driver)
+        arr = du.get_students_info(self.driver)
         write_to_json({"students": arr}, 'directory/3AL_1s.json')
 
         y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y3_button.click()
 
-        arr = du.get_current_directory(self.driver)
+        arr = du.get_students_info(self.driver)
         write_to_json({"students": arr}, 'directory/3ESGI_1s.json')
+
+    def get_teachers_directory(self):
+        self.driver.get('https://myges.fr/student/student-teacher-directory')
+
+        arr = du.get_teachers_info(self.driver)
+        write_to_json({"teachers": arr}, 'directory/teacher-2022-2023.json')

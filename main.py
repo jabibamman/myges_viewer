@@ -10,6 +10,6 @@ if __name__ == '__main__':
     scraper = MyGesScraper(driver, username, password)
 
     scraper.login()
-    directory = scraper.get_students_directory()
+    directory = scraper.get_teachers_directory()
 
     driver.quit()
