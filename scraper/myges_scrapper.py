@@ -259,13 +259,15 @@ class MyGesScraper:
         mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
         return marks
 
-    def get_marks_periodicly(self, year="2022-2023", semester="1"):
+    async def get_marks_periodicly(self, year="2022-2023", semester="1", bot=None):
         """
         Récupère les notes de l'utilisateur actuel
         Compare avec le fichier json actuel et remplace si différent et notifie l'utilisateur
         Format "year" -> 2022-2023, 2021-2022, etc...
         Format "semester" -> 1 ou 2
         """
+
+        print("Starting periodic marks check")
 
         self.driver.get('https://myges.fr/student/marks')
 
@@ -280,8 +282,6 @@ class MyGesScraper:
         option.click()
 
         time.sleep(5)
-
-        
 
         marks_table = wait_for_element(self.driver, By.ID, 'marksForm:marksWidget:coursesTable_data', 10)
 
@@ -340,11 +340,19 @@ class MyGesScraper:
         if 404 in json_marks:
             self.get_marks(year,semester)    
         else :
-            if(is_equal) :
+            is_equal, obj_diff = compare_tabs(marks, json_marks[0])
+
+            if is_equal :
                 print("Les notes n'ont pas changés !")
             else :
+
+                channel = bot.get_channel(1029086619002732629)
+
                 print("Les notes suivantes ont changés !")
+
                 for obj in obj_diff:
+                    await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
+
                     print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
                     if(obj['cc1'] != ""): print("CC1 :",obj['cc1'])
                     if(obj['cc2'] != ""): print("CC2 :",obj['cc2'])

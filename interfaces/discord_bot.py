@@ -4,8 +4,8 @@ from utils.config_utils import secret_discord
 
 
 class MyBot(commands.Bot):
-    def __init__(self, command_prefix, intents):
-        commands.Bot.__init__(self, command_prefix=command_prefix, intents=intents)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.add_commands()
 
     def add_commands(self):
