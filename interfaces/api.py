@@ -45,7 +45,7 @@ class Login(Resource):
 @ns.route('/week/<string:date_string>')
 @api.response(200, 'Successful')
 @api.response(400, 'Bad request')
-@api.doc(params={'date_string': 'A date string in the format dd_mm_yyyy'})
+@api.doc(params={'date_string': 'A date string in the format dd_mm_yy'})
 class Week(Resource):
     def get(self, date_string):
         schedule = get_week_schedule_json(date_string)
@@ -53,13 +53,13 @@ class Week(Resource):
             if 'username' in session and 'password' in session:
                 username = session['username']
                 password = session['password']
-                driver = initialise_selenium()
+                driver = initialise_selenium(headless=False)
                 scraper = MyGesScraper(driver, username, password)
                 login = scraper.login()
 
                 if login:
                     schedule = scraper.get_schedule(to_json=False, to_mongo=True, to_Console=False,
-                                                    startOfTheYear=False, endOfTheYear=False,
+                                                    startOfTheYear=True, endOfTheYear=False,
                                                     date_string=date_string)
                     driver.quit()
                     return schedule

@@ -1,4 +1,7 @@
 from interfaces.api import app
+from interfaces.discord_bot import main
+from scraper import initialise_selenium, MyGesScraper
+from utils.config_utils import read_config
 
 from scraper.myges_scrapper import MyGesScraper
 from scraper.selenium_utils import initialise_selenium
@@ -28,4 +31,5 @@ if __name__ == '__main__':
 
 
     app.run(debug=True)
+    main()
 
