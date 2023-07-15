@@ -166,3 +166,88 @@ class MyGesScraper:
                 # util.write_to_console(final_dict)
 
         return final_dict
+
+    def get_marks(self, year="2022-2023", semester="1"):
+        """
+        Récupère les notes de l'utilisateur en fonction d'une année et d'un semestre
+        Renvoie toutes les dates du semestre
+        Format "year" -> 2022-2023, 2021-2022, etc...
+        Format "semester" -> 1 ou 2
+        """
+
+        self.driver.get('https://myges.fr/student/marks')
+
+        # Attendre que la page des notes se charge complètement
+        time.sleep(5)
+
+        # Sélectionner l'élément du label du sélecteur
+        label_element = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_label', 10)
+
+        # Cliquer sur le label pour afficher les options
+        label_element.click()
+
+        # Sélectionner l'option correspondant à l'année et au semestre
+        select_div = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_panel', 10)
+        option_xpath = f'//li[contains(text(),"{year}") and contains(text(),"Semestre {semester}")]'
+        option = select_div.find_element(By.XPATH, option_xpath)
+        option.click()
+
+        # Attendre que les notes se chargent après la sélection de l'option
+        time.sleep(5)
+
+        
+
+        marks_table = wait_for_element(self.driver, By.ID, 'marksForm:marksWidget:coursesTable_data', 10)
+
+        marks = []
+        rows = marks_table.find_elements(By.TAG_NAME, 'tr')
+        for row in rows[1:]:
+            cells = row.find_elements(By.TAG_NAME, 'td')
+
+            class_name = ""
+            teacher = ""
+            coef = ""
+            ects = ""
+            cc1 = ""
+            cc2 = ""
+            cc3 = ""
+            exam = ""
+
+            class_name = cells[0].text.strip()
+            teacher = cells[1].text.strip()
+            coef = cells[2].text.strip()
+            ects = cells[3].text.strip()
+
+            if(len(cells) == 8):
+                cc1 = cells[4].text.strip()
+                cc2 = cells[5].text.strip()
+                cc3 = cells[6].text.strip()
+                exam = cells[7].text.strip()
+
+            if(len(cells) == 7):
+                cc1 = cells[4].text.strip()
+                cc2 = cells[5].text.strip()
+                exam = cells[6].text.strip()
+            
+            if(len(cells) == 6):
+                cc1 = cells[4].text.strip()
+                exam = cells[5].text.strip()
+            
+            if(len(cells) == 5):
+                exam = cells[4].text.strip()
+            
+            
+
+            marks.append({
+                'class_name': class_name,
+                'teacher': teacher,
+                'coef': coef,
+                'ects': ects,
+                'cc1': cc1,
+                'cc2': cc2,
+                'cc3': cc3,
+                'exam': exam
+            })
+
+        su.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
+        return marks
