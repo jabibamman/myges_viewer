@@ -14,8 +14,9 @@ class MyBot(commands.Bot):
             await ctx.channel.send(arg)
     async def on_ready(self):
         print(f'We have logged in as {self.user}')
-        channel = self.get_channel(1029086619002732629)
-        await channel.send('hi')
+        channel = self.get_channel(1129916394193047662)
+        if channel is  None:
+            print("Channel not found")
 
 
 def main():

@@ -19,7 +19,7 @@ async def get_marks_periodicly(bot):
         login = scraper.login()
         if login:
             print("Login successful")
-            await scraper.get_marks_periodicly("2022-2023", "1", bot)
+            await scraper.get_marks_periodicly("2022-2023", "1", bot=bot)
         else:
             print("Login failed")
         await asyncio.sleep(300)

@@ -12,6 +12,8 @@ from utils import schedule_utils as su
 from utils import marks_utils as mu
 from utils import logger_utils as log
 from utils import global_utils as util
+from utils.config_utils import discord_channel
+
 
 def compare_tabs(array1, array2):
     if len(array1) != len(array2):
@@ -267,6 +269,10 @@ class MyGesScraper:
         Format "semester" -> 1 ou 2
         """
 
+        if bot is None:
+            print("No bot provided")
+            return
+
         print("Starting periodic marks check")
 
         self.driver.get('https://myges.fr/student/marks')
@@ -345,18 +351,33 @@ class MyGesScraper:
             if is_equal :
                 print("Les notes n'ont pas changés !")
             else :
-                channel = bot.get_channel(1029086619002732629)
+                channel = await bot.fetch_channel(discord_channel)
+
+                if channel is None:
+                    print("Channel not found")
+                    return
 
                 print("Les notes suivantes ont changés !")
 
                 for obj in obj_diff:
                     print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
-
                     await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
 
-                    if(obj['cc1'] != ""): print("CC1 :",obj['cc1'])
-                    if(obj['cc2'] != ""): print("CC2 :",obj['cc2'])
-                    if(obj['cc3'] != ""): print("CC3 :",obj['cc3'])
-                    if(obj['exam'] != ""): print("Examen :",obj['exam'])
+
+                    if(obj['cc1'] != ""):
+                        print("CC1 :",obj['cc1'])
+                        await channel.send("CC1 :" + obj['cc1'])
+                    if(obj['cc2'] != ""):
+                        print("CC2 :",obj['cc2'])
+                        await channel.send("CC2 :" + obj['cc2'])
+
+                    if(obj['cc3'] != ""):
+                        print("CC3 :",obj['cc3'])
+                        await channel.send("CC3 :" + obj['cc3'])
+
+                    if(obj['exam'] != ""):
+                        print("Examen :",obj['exam'])
+                        await channel.send("Examen :" + obj['exam'])
+
                 mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
         return marks
