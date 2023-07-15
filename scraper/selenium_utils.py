@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-def initialise_selenium(headless=False):
+def initialise_selenium(headless=True):
     chrome_options = Options()
     if headless:
         chrome_options.add_argument("--headless")

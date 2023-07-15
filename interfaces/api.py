@@ -20,7 +20,6 @@ login_parser = api.parser()
 login_parser.add_argument('username', type=str, required=True, help='Username for MyGes', location='json')
 login_parser.add_argument('password', type=str, required=True, help='Password for MyGes', location='json')
 
-
 @ns.route('/login')
 class Login(Resource):
     @api.expect(login_parser)

@@ -9,9 +9,21 @@ from selenium.webdriver.common.by import By
 from scraper.selenium_utils import wait_for_element
 
 from utils import schedule_utils as su
+from utils import marks_utils as mu
 from utils import logger_utils as log
 from utils import global_utils as util
 
+def compare_tabs(array1, array2):
+    if len(array1) != len(array2):
+        print("Les tableaux ne font pas la même taille")
+        return False, []
+
+    obj_diff = []
+    for i, (obj1, obj2) in enumerate(zip(array1, array2)):
+        if obj1 != obj2:
+            obj_diff.append(obj1)
+
+    return not bool(obj_diff), obj_diff
 
 class MyGesScraper:
     logger = log.get_logger()
@@ -177,22 +189,17 @@ class MyGesScraper:
 
         self.driver.get('https://myges.fr/student/marks')
 
-        # Attendre que la page des notes se charge complètement
         time.sleep(5)
 
-        # Sélectionner l'élément du label du sélecteur
         label_element = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_label', 10)
 
-        # Cliquer sur le label pour afficher les options
         label_element.click()
 
-        # Sélectionner l'option correspondant à l'année et au semestre
         select_div = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_panel', 10)
         option_xpath = f'//li[contains(text(),"{year}") and contains(text(),"Semestre {semester}")]'
         option = select_div.find_element(By.XPATH, option_xpath)
         option.click()
 
-        # Attendre que les notes se chargent après la sélection de l'option
         time.sleep(5)
 
         
@@ -249,5 +256,99 @@ class MyGesScraper:
                 'exam': exam
             })
 
-        su.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
+        mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
+        return marks
+
+    def get_marks_periodicly(self, year="2022-2023", semester="1"):
+        """
+        Récupère les notes de l'utilisateur actuel
+        Compare avec le fichier json actuel et remplace si différent et notifie l'utilisateur
+        Format "year" -> 2022-2023, 2021-2022, etc...
+        Format "semester" -> 1 ou 2
+        """
+
+        self.driver.get('https://myges.fr/student/marks')
+
+        time.sleep(5)
+        label_element = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_label', 10)
+
+        label_element.click()
+
+        select_div = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_panel', 10)
+        option_xpath = f'//li[contains(text(),"{year}") and contains(text(),"Semestre {semester}")]'
+        option = select_div.find_element(By.XPATH, option_xpath)
+        option.click()
+
+        time.sleep(5)
+
+        
+
+        marks_table = wait_for_element(self.driver, By.ID, 'marksForm:marksWidget:coursesTable_data', 10)
+
+        marks = []
+        rows = marks_table.find_elements(By.TAG_NAME, 'tr')
+        for row in rows[1:]:
+            cells = row.find_elements(By.TAG_NAME, 'td')
+
+            class_name = ""
+            teacher = ""
+            coef = ""
+            ects = ""
+            cc1 = ""
+            cc2 = ""
+            cc3 = ""
+            exam = ""
+
+            class_name = cells[0].text.strip()
+            teacher = cells[1].text.strip()
+            coef = cells[2].text.strip()
+            ects = cells[3].text.strip()
+
+            if(len(cells) == 8):
+                cc1 = cells[4].text.strip()
+                cc2 = cells[5].text.strip()
+                cc3 = cells[6].text.strip()
+                exam = cells[7].text.strip()
+
+            if(len(cells) == 7):
+                cc1 = cells[4].text.strip()
+                cc2 = cells[5].text.strip()
+                exam = cells[6].text.strip()
+            
+            if(len(cells) == 6):
+                cc1 = cells[4].text.strip()
+                exam = cells[5].text.strip()
+            
+            if(len(cells) == 5):
+                exam = cells[4].text.strip()
+            
+            
+
+            marks.append({
+                'class_name': class_name,
+                'teacher': teacher,
+                'coef': coef,
+                'ects': ects,
+                'cc1': cc1,
+                'cc2': cc2,
+                'cc3': cc3,
+                'exam': exam
+            })
+
+        json_marks = mu.get_marks_json(year,semester)
+
+        if 404 in json_marks:
+            self.get_marks(year,semester)    
+        else :
+            if(is_equal) :
+                print("Les notes n'ont pas changés !")
+            else :
+                print("Les notes suivantes ont changés !")
+                for obj in obj_diff:
+                    print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
+                    if(obj['cc1'] != ""): print("CC1 :",obj['cc1'])
+                    if(obj['cc2'] != ""): print("CC2 :",obj['cc2'])
+                    if(obj['cc3'] != ""): print("CC3 :",obj['cc3'])
+                    if(obj['exam'] != ""): print("Examen :",obj['exam'])
+                mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
         return marks
