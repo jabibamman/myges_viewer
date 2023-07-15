@@ -7,21 +7,21 @@ from interfaces.discord_bot import MyBot
 from utils.config_utils import read_config, username, password, secret_discord
 from scraper.myges_scrapper import MyGesScraper
 from scraper.selenium_utils import initialise_selenium
+from utils import logger_utils as log
 
 app = Flask(__name__)
 
 async def get_marks_periodicly(bot):
+    logger = log.get_logger()
+
     while True:
         driver = initialise_selenium(headless=False)
-        print("Driver initialised")
-        print("Bot started")
         scraper = MyGesScraper(driver, username, password)
         login = scraper.login()
         if login:
-            print("Login successful")
             await scraper.get_marks_periodicly("2022-2023", "1", bot=bot)
         else:
-            print("Login failed")
+            logger.error("Login failed")
         await asyncio.sleep(300)
 
 async def bot_and_scraper():

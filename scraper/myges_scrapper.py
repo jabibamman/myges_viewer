@@ -27,6 +27,7 @@ def compare_tabs(array1, array2):
 
     return not bool(obj_diff), obj_diff
 
+
 class MyGesScraper:
     logger = log.get_logger()
 
@@ -204,48 +205,35 @@ class MyGesScraper:
 
         time.sleep(5)
 
-        
-
         marks_table = wait_for_element(self.driver, By.ID, 'marksForm:marksWidget:coursesTable_data', 10)
 
         marks = []
         rows = marks_table.find_elements(By.TAG_NAME, 'tr')
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, 'td')
-
-            class_name = ""
-            teacher = ""
-            coef = ""
-            ects = ""
-            cc1 = ""
-            cc2 = ""
-            cc3 = ""
-            exam = ""
-
+            class_name, teacher, coef, ects, cc1, cc2, cc3, exam = "", "", "", "", "", "", "", ""
             class_name = cells[0].text.strip()
             teacher = cells[1].text.strip()
             coef = cells[2].text.strip()
             ects = cells[3].text.strip()
 
-            if(len(cells) == 8):
+            if len(cells) == 8:
                 cc1 = cells[4].text.strip()
                 cc2 = cells[5].text.strip()
                 cc3 = cells[6].text.strip()
                 exam = cells[7].text.strip()
 
-            if(len(cells) == 7):
+            if len(cells) == 7:
                 cc1 = cells[4].text.strip()
                 cc2 = cells[5].text.strip()
                 exam = cells[6].text.strip()
-            
-            if(len(cells) == 6):
+
+            if len(cells) == 6:
                 cc1 = cells[4].text.strip()
                 exam = cells[5].text.strip()
-            
-            if(len(cells) == 5):
+
+            if len(cells) == 5:
                 exam = cells[4].text.strip()
-            
-            
 
             marks.append({
                 'class_name': class_name,
@@ -270,10 +258,8 @@ class MyGesScraper:
         """
 
         if bot is None:
-            print("No bot provided")
+            self.logger.error("Bot is not defined")
             return
-
-        print("Starting periodic marks check")
 
         self.driver.get('https://myges.fr/student/marks')
 
@@ -296,39 +282,29 @@ class MyGesScraper:
         for row in rows[1:]:
             cells = row.find_elements(By.TAG_NAME, 'td')
 
-            class_name = ""
-            teacher = ""
-            coef = ""
-            ects = ""
-            cc1 = ""
-            cc2 = ""
-            cc3 = ""
-            exam = ""
-
+            class_name, teacher, coef, ects, cc1, cc2, cc3, exam = "", "", "", "", "", "", "", ""
             class_name = cells[0].text.strip()
             teacher = cells[1].text.strip()
             coef = cells[2].text.strip()
             ects = cells[3].text.strip()
 
-            if(len(cells) == 8):
+            if len(cells) == 8:
                 cc1 = cells[4].text.strip()
                 cc2 = cells[5].text.strip()
                 cc3 = cells[6].text.strip()
                 exam = cells[7].text.strip()
 
-            if(len(cells) == 7):
+            if len(cells) == 7:
                 cc1 = cells[4].text.strip()
                 cc2 = cells[5].text.strip()
                 exam = cells[6].text.strip()
-            
-            if(len(cells) == 6):
+
+            if len(cells) == 6:
                 cc1 = cells[4].text.strip()
                 exam = cells[5].text.strip()
-            
-            if(len(cells) == 5):
+
+            if len(cells) == 5:
                 exam = cells[4].text.strip()
-            
-            
 
             marks.append({
                 'class_name': class_name,
@@ -341,42 +317,41 @@ class MyGesScraper:
                 'exam': exam
             })
 
-        json_marks = mu.get_marks_json(year,semester)
+        json_marks = mu.get_marks_json(year, semester)
 
         if 404 in json_marks:
-            self.get_marks(year,semester)    
-        else :
+            self.get_marks(year, semester)
+        else:
             is_equal, obj_diff = compare_tabs(marks, json_marks[0])
 
-            if is_equal :
-                print("Les notes n'ont pas changés !")
-            else :
+            if is_equal:
+                self.logger.info("Les notes n'ont pas changés !")
+            else:
                 channel = await bot.fetch_channel(discord_channel)
 
                 if channel is None:
-                    print("Channel not found")
+                    self.logger.error("Channel not found")
                     return
 
-                print("Les notes suivantes ont changés !")
+                self.logger.info("Les notes suivantes ont changés !")
 
                 for obj in obj_diff:
                     print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
                     await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
 
-
-                    if(obj['cc1'] != ""):
-                        print("CC1 :",obj['cc1'])
+                    if obj['cc1'] != "":
+                        self.logger.info("CC1 :", obj['cc1'])
                         await channel.send("CC1 :" + obj['cc1'])
-                    if(obj['cc2'] != ""):
-                        print("CC2 :",obj['cc2'])
+                    if obj['cc2'] != "":
+                        self.logger.info("CC2 :", obj['cc2'])
                         await channel.send("CC2 :" + obj['cc2'])
 
-                    if(obj['cc3'] != ""):
-                        print("CC3 :",obj['cc3'])
+                    if obj['cc3'] != "":
+                        self.logger.info("CC3 :", obj['cc3'])
                         await channel.send("CC3 :" + obj['cc3'])
 
-                    if(obj['exam'] != ""):
-                        print("Examen :",obj['exam'])
+                    if obj['exam'] != "":
+                        self.logger.info("Examen :", obj['exam'])
                         await channel.send("Examen :" + obj['exam'])
 
                 mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
