@@ -345,15 +345,15 @@ class MyGesScraper:
             if is_equal :
                 print("Les notes n'ont pas changés !")
             else :
-
                 channel = bot.get_channel(1029086619002732629)
 
                 print("Les notes suivantes ont changés !")
 
                 for obj in obj_diff:
+                    print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
+
                     await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
 
-                    print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
                     if(obj['cc1'] != ""): print("CC1 :",obj['cc1'])
                     if(obj['cc2'] != ""): print("CC2 :",obj['cc2'])
                     if(obj['cc3'] != ""): print("CC3 :",obj['cc3'])
