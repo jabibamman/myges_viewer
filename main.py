@@ -3,13 +3,13 @@ import threading
 
 import discord
 from flask import Flask
+
+from interfaces.api import app
 from interfaces.discord_bot import MyBot
-from utils.config_utils import read_config, username, password, secret_discord
+from utils.config_utils import username, password, secret_discord
 from scraper.myges_scrapper import MyGesScraper
 from scraper.selenium_utils import initialise_selenium
 from utils import logger_utils as log
-
-app = Flask(__name__)
 
 async def get_marks_periodicly(bot):
     logger = log.get_logger()
