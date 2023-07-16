@@ -1,6 +1,9 @@
 import logging
+import os
+
 from selenium.webdriver.common.by import By
 from scraper.selenium_utils import wait_for_element
+from utils.json_utils import load_json
 
 
 def get_students_info(driver):
@@ -56,3 +59,20 @@ def get_teachers_info(driver):
         except:
             logging.getLogger('logger').error("StaleElementReferenceException occurred for name element")
         i += 1
+
+
+def get_student_directory_json(year='3', promotion='ESGI', semester='1'):
+    filename = f"data/directory/{year}{promotion}_{semester}s.json"
+    if os.path.exists(filename):
+        data = load_json(filename)
+        return data, 200
+    else:
+        return {"error": "File does not exist"}, 404
+
+def get_teacher_directory_json():
+    filename = f"data/directory/teacher-2022-2023.json"
+    if os.path.exists(filename):
+        data = load_json(filename)
+        return data, 200
+    else:
+        return {"error": "File does not exist"}, 404

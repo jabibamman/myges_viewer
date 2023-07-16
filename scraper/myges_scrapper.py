@@ -385,14 +385,14 @@ class MyGesScraper:
         grade4_select.click()
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/4AL.json')
+        write_to_json({"students": arr}, 'directory/4AL_1s.json')
 
         y4_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y4_button.click()
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/4ESGI.json')
+        write_to_json({"students": arr}, 'directory/4ESGI_1s.json')
 
         unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
         unfold_button.click()

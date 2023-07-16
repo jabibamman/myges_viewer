@@ -1,9 +1,5 @@
 import asyncio
 import threading
-from interfaces.api import app
-from scraper import initialise_selenium, MyGesScraper
-from utils.config_utils import read_config
-
 import discord
 from flask import Flask
 from interfaces.discord_bot import MyBot
@@ -18,7 +14,7 @@ async def get_marks_periodicly(bot):
     logger = log.get_logger()
 
     while True:
-        driver = initialise_selenium(headless=False)
+        driver = initialise_selenium(headless=True)
         scraper = MyGesScraper(driver, username, password)
         login = scraper.login()
         if login:
@@ -44,12 +40,3 @@ if __name__ == '__main__':
     t1.start()
 
     app.run(debug=True)
-
-    username, password = read_config()
-    driver = initialise_selenium()
-    scraper = MyGesScraper(driver, username, password)
-
-    scraper.login()
-    directory = scraper.get_teachers_directory()
-
-    driver.quit()

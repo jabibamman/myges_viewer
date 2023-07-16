@@ -1,6 +1,7 @@
 from flask import Flask, session
 from flask_restx import Api, Resource
 from scraper import initialise_selenium, MyGesScraper
+from utils.directory_utils import get_teacher_directory_json, get_student_directory_json
 from utils.schedule_utils import get_week_schedule_json
 from utils.marks_utils import get_marks_json
 
@@ -16,6 +17,7 @@ ns = api.namespace('myges', description='MyGes operations')
 login_parser = api.parser()
 login_parser.add_argument('username', type=str, required=True, help='Username for MyGes', location='json')
 login_parser.add_argument('password', type=str, required=True, help='Password for MyGes', location='json')
+
 
 @ns.route('/login')
 class Login(Resource):
@@ -63,6 +65,7 @@ class Week(Resource):
         else:
             return schedule
 
+
 @ns.route('/marks/year/<string:year_string>/semester/<string:semester_string>')
 @api.response(200, 'Successful')
 @api.response(400, 'Bad request')
@@ -85,3 +88,52 @@ class Marks(Resource):
                     return marks
         else:
             return marks
+
+
+@ns.route('/directory/student/year/<string:year>/promotion/<string:promotion>/semester/<string:semester>')
+@api.response(200, 'Successful')
+@api.response(400, 'Bad request')
+@api.doc(params={'year': 'A year string, e.g. "1", "2", "3", "4", "5"',
+                 'promotion': 'A promotion string, e.g. "AL", "AL2", "ESGI"',
+                 'semester_string': 'A semester string "1" or "2"'})
+class StudentDirectory(Resource):
+    def get(self, year, promotion, semester):
+        directory = get_student_directory_json(year, promotion, semester)
+        if 404 not in directory:
+            return directory
+
+        if 'username' in session and 'password' in session:
+            username = session['username']
+            password = session['password']
+            driver = initialise_selenium(headless=False)
+            scraper = MyGesScraper(driver, username, password)
+            login = scraper.login()
+
+            if login:
+                scraper.get_schedule()
+                driver.quit()
+                directory = get_student_directory_json(year, promotion, semester)
+                return directory
+
+
+@ns.route('/directory/teacher')
+@api.response(200, 'Successful')
+@api.response(400, 'Bad request')
+class StudentDirectory(Resource):
+    def get(self):
+        directory = get_teacher_directory_json()
+        if 404 not in directory:
+            return directory
+
+        if 'username' in session and 'password' in session:
+            username = session['username']
+            password = session['password']
+            driver = initialise_selenium(headless=False)
+            scraper = MyGesScraper(driver, username, password)
+            login = scraper.login()
+
+            if login:
+                scraper.get_teachers_directory()
+                driver.quit()
+                directory = get_teacher_directory_json()
+                return directory
