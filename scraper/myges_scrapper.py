@@ -7,10 +7,25 @@ from selenium.webdriver.common.by import By
 from scraper.selenium_utils import wait_for_element
 
 from utils import schedule_utils as su
+from utils import marks_utils as mu
 from utils import logger_utils as log
 from utils import global_utils as util
+from utils.config_utils import discord_channel
 from utils import directory_utils as du
 from utils.global_utils import write_to_json
+
+
+def compare_tabs(array1, array2):
+    if len(array1) != len(array2):
+        print("Les tableaux ne font pas la même taille")
+        return False, []
+
+    obj_diff = []
+    for i, (obj1, obj2) in enumerate(zip(array1, array2)):
+        if obj1 != obj2:
+            obj_diff.append(obj1)
+
+    return not bool(obj_diff), obj_diff
 
 
 class MyGesScraper:
@@ -166,6 +181,181 @@ class MyGesScraper:
                 # util.write_to_console(final_dict)
 
         return final_dict
+
+    def get_marks(self, year="2022-2023", semester="1"):
+        """
+        Récupère les notes de l'utilisateur en fonction d'une année et d'un semestre
+        Renvoie toutes les dates du semestre
+        Format "year" -> 2022-2023, 2021-2022, etc...
+        Format "semester" -> 1 ou 2
+        """
+
+        self.driver.get('https://myges.fr/student/marks')
+
+        time.sleep(5)
+
+        label_element = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_label', 10)
+
+        label_element.click()
+
+        select_div = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_panel', 10)
+        option_xpath = f'//li[contains(text(),"{year}") and contains(text(),"Semestre {semester}")]'
+        option = select_div.find_element(By.XPATH, option_xpath)
+        option.click()
+
+        time.sleep(5)
+
+        marks_table = wait_for_element(self.driver, By.ID, 'marksForm:marksWidget:coursesTable_data', 10)
+
+        marks = []
+        rows = marks_table.find_elements(By.TAG_NAME, 'tr')
+        for row in rows[1:]:
+            cells = row.find_elements(By.TAG_NAME, 'td')
+            class_name, teacher, coef, ects, cc1, cc2, cc3, exam = "", "", "", "", "", "", "", ""
+            class_name = cells[0].text.strip()
+            teacher = cells[1].text.strip()
+            coef = cells[2].text.strip()
+            ects = cells[3].text.strip()
+
+            if len(cells) == 8:
+                cc1 = cells[4].text.strip()
+                cc2 = cells[5].text.strip()
+                cc3 = cells[6].text.strip()
+                exam = cells[7].text.strip()
+
+            if len(cells) == 7:
+                cc1 = cells[4].text.strip()
+                cc2 = cells[5].text.strip()
+                exam = cells[6].text.strip()
+
+            if len(cells) == 6:
+                cc1 = cells[4].text.strip()
+                exam = cells[5].text.strip()
+
+            if len(cells) == 5:
+                exam = cells[4].text.strip()
+
+            marks.append({
+                'class_name': class_name,
+                'teacher': teacher,
+                'coef': coef,
+                'ects': ects,
+                'cc1': cc1,
+                'cc2': cc2,
+                'cc3': cc3,
+                'exam': exam
+            })
+
+        mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
+        return marks
+
+    async def get_marks_periodicly(self, year="2022-2023", semester="1", bot=None):
+        """
+        Récupère les notes de l'utilisateur actuel
+        Compare avec le fichier json actuel et remplace si différent et notifie l'utilisateur
+        Format "year" -> 2022-2023, 2021-2022, etc...
+        Format "semester" -> 1 ou 2
+        """
+
+        if bot is None:
+            self.logger.error("Bot is not defined")
+            return
+
+        self.driver.get('https://myges.fr/student/marks')
+
+        time.sleep(5)
+        label_element = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_label', 10)
+
+        label_element.click()
+
+        select_div = wait_for_element(self.driver, By.ID, 'marksForm:j_idt174:periodSelect_panel', 10)
+        option_xpath = f'//li[contains(text(),"{year}") and contains(text(),"Semestre {semester}")]'
+        option = select_div.find_element(By.XPATH, option_xpath)
+        option.click()
+
+        time.sleep(5)
+
+        marks_table = wait_for_element(self.driver, By.ID, 'marksForm:marksWidget:coursesTable_data', 10)
+
+        marks = []
+        rows = marks_table.find_elements(By.TAG_NAME, 'tr')
+        for row in rows[1:]:
+            cells = row.find_elements(By.TAG_NAME, 'td')
+
+            class_name, teacher, coef, ects, cc1, cc2, cc3, exam = "", "", "", "", "", "", "", ""
+            class_name = cells[0].text.strip()
+            teacher = cells[1].text.strip()
+            coef = cells[2].text.strip()
+            ects = cells[3].text.strip()
+
+            if len(cells) == 8:
+                cc1 = cells[4].text.strip()
+                cc2 = cells[5].text.strip()
+                cc3 = cells[6].text.strip()
+                exam = cells[7].text.strip()
+
+            if len(cells) == 7:
+                cc1 = cells[4].text.strip()
+                cc2 = cells[5].text.strip()
+                exam = cells[6].text.strip()
+
+            if len(cells) == 6:
+                cc1 = cells[4].text.strip()
+                exam = cells[5].text.strip()
+
+            if len(cells) == 5:
+                exam = cells[4].text.strip()
+
+            marks.append({
+                'class_name': class_name,
+                'teacher': teacher,
+                'coef': coef,
+                'ects': ects,
+                'cc1': cc1,
+                'cc2': cc2,
+                'cc3': cc3,
+                'exam': exam
+            })
+
+        json_marks = mu.get_marks_json(year, semester)
+
+        if 404 in json_marks:
+            self.get_marks(year, semester)
+        else:
+            is_equal, obj_diff = compare_tabs(marks, json_marks[0])
+
+            if is_equal:
+                self.logger.info("Les notes n'ont pas changés !")
+            else:
+                channel = await bot.fetch_channel(discord_channel)
+
+                if channel is None:
+                    self.logger.error("Channel not found")
+                    return
+
+                self.logger.info("Les notes suivantes ont changés !")
+
+                for obj in obj_diff:
+                    print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
+                    await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
+
+                    if obj['cc1'] != "":
+                        self.logger.info("CC1 :", obj['cc1'])
+                        await channel.send("CC1 :" + obj['cc1'])
+                    if obj['cc2'] != "":
+                        self.logger.info("CC2 :", obj['cc2'])
+                        await channel.send("CC2 :" + obj['cc2'])
+
+                    if obj['cc3'] != "":
+                        self.logger.info("CC3 :", obj['cc3'])
+                        await channel.send("CC3 :" + obj['cc3'])
+
+                    if obj['exam'] != "":
+                        self.logger.info("Examen :", obj['exam'])
+                        await channel.send("Examen :" + obj['exam'])
+
+                mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
+        return marks
 
     def get_students_directory(self):
         self.driver.get('https://myges.fr/student/student-directory')
