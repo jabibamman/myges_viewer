@@ -10,6 +10,7 @@ from scraper.selenium_utils import get_element_text, click_element
 from utils import json_utils
 from selenium.webdriver.common.by import By
 from utils import logger_utils as log
+from utils.global_utils import write_to_json
 from utils.config_utils import username
 from utils.json_utils import load_json
 

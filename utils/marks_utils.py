@@ -1,14 +1,5 @@
 import json
 import os
-import time
-from datetime import datetime
-import re
-
-from selenium.common.exceptions import ElementClickInterceptedException
-
-from scraper.selenium_utils import get_element_text, click_element
-from utils import json_utils
-from selenium.webdriver.common.by import By
 from utils import logger_utils as log
 from utils.config_utils import username
 from utils.json_utils import load_json

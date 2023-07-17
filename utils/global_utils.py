@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 import os
 
@@ -48,6 +49,11 @@ def write_html(soup, filename):
 
     with open(filename, 'w', encoding='utf-8') as file:
         file.write(html)
+
+def write_to_json(final_dict, filename):
+    log.get_logger().info(f"Writing data to {filename}")
+    with open(f"data/{filename}", 'w', encoding='utf-8') as f:
+        json.dump(final_dict, f, indent=4)
 
 
 def week_to_date_string(year, week_number):

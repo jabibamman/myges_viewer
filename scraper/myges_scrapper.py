@@ -1,7 +1,5 @@
-import json
 import locale
 from datetime import datetime
-import re
 import time
 
 from bs4 import BeautifulSoup
@@ -14,6 +12,8 @@ from utils import lessons_utils as lu
 from utils import logger_utils as log
 from utils import global_utils as util
 from utils.config_utils import discord_channel
+from utils import directory_utils as du
+from utils.global_utils import write_to_json
 import discord
 
 
@@ -508,3 +508,68 @@ class MyGesScraper:
                 await channel.send(embed=embed)
                 lu.write_to_json(lessons, "lessons_{}.json".format(year + "_semester_" + semester), directory="lessons")
         return lessons
+
+    def get_students_directory(self):
+        self.driver.get('https://myges.fr/student/student-directory')
+
+        active_button = wait_for_element(self.driver, By.CSS_SELECTOR, 'div.ui-state-active')
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL2_2s.json')
+
+        al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
+        al_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL_2s.json')
+
+        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y3_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3ESGI_2s.json')
+
+        unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
+        unfold_button.click()
+        grade4_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(1)')
+        grade4_select.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/4AL_1s.json')
+
+        y4_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y4_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/4ESGI_1s.json')
+
+        unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
+        unfold_button.click()
+        grade3_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(3)')
+        grade3_select.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL2_1s.json')
+
+        al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
+        al_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL_1s.json')
+
+        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y3_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3ESGI_1s.json')
+
+    def get_teachers_directory(self):
+        self.driver.get('https://myges.fr/student/student-teacher-directory')
+
+        arr = du.get_teachers_info(self.driver)
+        write_to_json({"teachers": arr}, 'directory/teacher-2022-2023.json')
