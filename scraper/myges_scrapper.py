@@ -10,6 +10,7 @@ from scraper.selenium_utils import wait_for_element
 
 from utils import schedule_utils as su
 from utils import marks_utils as mu
+from utils import lessons_utils as lu
 from utils import logger_utils as log
 from utils import global_utils as util
 from utils.config_utils import discord_channel
@@ -26,6 +27,26 @@ def compare_tabs(array1, array2):
             obj_diff.append(obj1)
 
     return not bool(obj_diff), obj_diff
+
+def extract_data_from_h3_div(h3_element, div_element):
+    lesson_data = {}
+
+    class_info = h3_element.text.strip().split('  ')
+    lesson_data['class'] = class_info[0]
+    lesson_data['teacher'] = class_info[1]
+
+    files_data = []
+    a_elements = div_element.find_elements_by_tag_name('a')
+    for a_element in a_elements:
+        file_info = a_element.get_attribute('textContent').strip().splitlines()
+        file_name = file_info[0].strip()
+        file_link = a_element.get_attribute('onclick')
+        file_link = file_link.replace("window.open('", "").replace("'); return false;", "")
+        files_data.append({'name': file_name, 'link': file_link})
+
+    lesson_data['files'] = files_data
+
+    return lesson_data
 
 
 class MyGesScraper:
@@ -248,6 +269,46 @@ class MyGesScraper:
 
         mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
         return marks
+
+    def get_lessons(self, year="2022-2023", semester="1"):
+        """
+        Récupère les cours de l'utilisateur en fonction d'une année et d'un semestre
+        Renvoie tout les cours du semestre
+        Format "year" -> 2022-2023, 2021-2022, etc...
+        Format "semester" -> 1 ou 2
+        """
+
+        self.driver.get('https://myges.fr/student/courses-files')
+
+        time.sleep(5)
+
+        label_element = wait_for_element(self.driver, By.ID, 'coursesFilesForm:j_idt173:periodSelect_label', 10)
+
+        label_element.click()
+
+        select_div = wait_for_element(self.driver, By.ID, 'coursesFilesForm:j_idt173:periodSelect_panel', 10)
+        option_xpath = f'//li[contains(text(),"{year}") and contains(text(),"Semestre {semester}")]'
+        option = select_div.find_element(By.XPATH, option_xpath)
+        option.click()
+
+        time.sleep(5)
+
+        lessons_table = wait_for_element(self.driver, By.ID, 'coursesFilesForm:coursesWidget:coursesAccordion', 10)
+
+        h3_elements = lessons_table.find_elements(By.CSS_SELECTOR, 'h3')
+        div_elements = lessons_table.find_elements(By.CSS_SELECTOR, 'div.ui-accordion-content')
+
+        lessons = []
+
+        for i in range(len(h3_elements)):
+            h3_element = h3_elements[i]
+            div_element = div_elements[i]
+            lessons.append(extract_data_from_h3_div(h3_element, div_element))
+
+        lu.write_to_json(lessons, "lessons_{}.json".format(year + "_semester_" + semester), directory="lessons")
+        return lessons
+
+
 
     async def get_marks_periodicly(self, year="2022-2023", semester="1", bot=None):
         """

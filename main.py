@@ -15,7 +15,7 @@ async def get_marks_periodicly(bot):
     logger = log.get_logger()
 
     while True:
-        driver = initialise_selenium(headless=False)
+        driver = initialise_selenium(headless=True)
         scraper = MyGesScraper(driver, username, password)
         login = scraper.login()
         if login:
