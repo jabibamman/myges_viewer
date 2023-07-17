@@ -394,11 +394,12 @@ class MyGesScraper:
                     self.logger.error("Channel not found")
                     return
 
-                self.logger.info("Les notes suivantes ont changés !")
+                self.logger.info("Les notes suivantes pour le semestre " + semester + " ont changés !")
+                await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
 
                 for obj in obj_diff:
                     print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
-                    await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
+                    await channel.send("Les notes suivantes pour le semestre " + semester + " ont changés !")
 
                     if obj['cc1'] != "":
                         self.logger.info("CC1 :", obj['cc1'])
@@ -417,3 +418,73 @@ class MyGesScraper:
 
                 mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
         return marks
+
+
+    async def get_lessons_periodicly(self, year="2022-2023", semester="1", bot=None):
+        """
+        Récupère les leçons de l'utilisateur actuel
+        Compare avec le fichier json actuel et remplace si différent et notifie l'utilisateur
+        Format "year" -> 2022-2023, 2021-2022, etc...
+        Format "semester" -> 1 ou 2
+        """
+
+        if bot is None:
+            self.logger.error("Bot is not defined")
+            return
+
+        self.driver.get('https://myges.fr/student/courses-files')
+
+        time.sleep(5)
+
+        label_element = wait_for_element(self.driver, By.ID, 'coursesFilesForm:j_idt173:periodSelect_label', 10)
+
+        label_element.click()
+
+        select_div = wait_for_element(self.driver, By.ID, 'coursesFilesForm:j_idt173:periodSelect_panel', 10)
+        option_xpath = f'//li[contains(text(),"{year}") and contains(text(),"Semestre {semester}")]'
+        option = select_div.find_element(By.XPATH, option_xpath)
+        option.click()
+
+        time.sleep(5)
+
+        lessons_table = wait_for_element(self.driver, By.ID, 'coursesFilesForm:coursesWidget:coursesAccordion', 10)
+
+        h3_elements = lessons_table.find_elements(By.CSS_SELECTOR, 'h3')
+        div_elements = lessons_table.find_elements(By.CSS_SELECTOR, 'div.ui-accordion-content')
+
+        lessons = []
+
+        for i in range(len(h3_elements)):
+            h3_element = h3_elements[i]
+            div_element = div_elements[i]
+            lessons.append(extract_data_from_h3_div(h3_element, div_element))
+
+        json_lessons = lu.get_lessons_json(year, semester)
+
+        if 404 in json_lessons:
+            self.get_lessons(year, semester)
+        else:
+            is_equal, obj_diff = compare_tabs(lessons, json_lessons[0])
+
+            if is_equal:
+                self.logger.info("Les cours n'ont pas changés !")
+            else:
+                channel = await bot.fetch_channel(discord_channel)
+
+                if channel is None:
+                    self.logger.error("Channel not found")
+                    return
+
+                self.logger.info("**Vous avez de nouveaux supports de cours pour le semestre " + semester + " :**")
+                await channel.send("**Vous avez de nouveaux supports de cours pour le semestre " + semester + " :**")
+
+                for obj in obj_diff:
+                    print("Vous avez un nouveau cours en '" + obj['class'] + "'")
+                    await channel.send("Vous avez un nouveau cours en '" + obj['class'] + "'")
+
+                    for file_obj in obj['files']:
+                        print(file_obj['name'] + " : " + file_obj['link'])
+                        await channel.send(file_obj['name'] + " : " + file_obj['link'])
+
+                lu.write_to_json(lessons, "lessons_{}.json".format(year + "_semester_" + semester), directory="lessons")
+        return lessons
