@@ -152,7 +152,7 @@ class Lessons(Resource):
 @api.response(400, 'Bad request')
 @api.doc(params={'year': 'A year string, e.g. "1", "2", "3", "4", "5"',
                  'promotion': 'A promotion string, e.g. "AL", "AL2", "ESGI"',
-                 'semester_string': 'A semester string "1" or "2"'})
+                 'semester': 'A semester string "1" or "2"'})
 class StudentDirectory(Resource):
     def get(self, year, promotion, semester):
         directory = get_student_directory_json(year, promotion, semester)
