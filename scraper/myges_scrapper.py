@@ -14,6 +14,7 @@ from utils import lessons_utils as lu
 from utils import logger_utils as log
 from utils import global_utils as util
 from utils.config_utils import discord_channel
+import discord
 
 
 def compare_tabs(array1, array2):
@@ -474,16 +475,20 @@ class MyGesScraper:
                     self.logger.error("Channel not found")
                     return
 
+                embed = discord.Embed(title=f"Vous avez de nouveaux supports de cours pour le semestre {semester} :",
+                          description="",
+                          color=discord.Color.blue())
+
+                
+
                 self.logger.info("**Vous avez de nouveaux supports de cours pour le semestre " + semester + " :**")
-                await channel.send("**Vous avez de nouveaux supports de cours pour le semestre " + semester + " :**")
 
                 for obj in obj_diff:
-                    self.logger.info("Vous avez un nouveau cours en '" + obj['class'] + "'")
-                    await channel.send("Vous avez un nouveau cours en '" + obj['class'] + "'")
-
+                    embed.add_field(name=obj['class'] + " : ", value="", inline=False)
                     for file_obj in obj['files']:
                         self.logger.info(file_obj['name'] + " : " + file_obj['link'])
-                        await channel.send(file_obj['name'] + " : " + file_obj['link'])
+                        embed.add_field(name="", value=file_obj['name'] + " : " + file_obj['link'], inline=False)
 
+                await channel.send(embed=embed)
                 lu.write_to_json(lessons, "lessons_{}.json".format(year + "_semester_" + semester), directory="lessons")
         return lessons
