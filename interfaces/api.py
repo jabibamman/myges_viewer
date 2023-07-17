@@ -50,6 +50,8 @@ class Login(Resource):
 @api.response(400, 'Bad request')
 @api.doc(params={
                     'date_string': 'A date string in the format dd_mm_yy',
+                 #   'startOfTheYear': 'If the date_string is the start of the year',
+                #    'endOfTheYear': 'If the date_string is the end of the year',
                     'to_json': 'Output the schedule be in JSON format',
                     'to_Console': 'Output the schedule to the console',
 })
@@ -58,26 +60,26 @@ class Week(Resource):
     parser.add_argument('to_json', type=bool, default=False, help='Output the schedule be in JSON format (boolean)')
     parser.add_argument('to_Console', type=bool, default=False, help='Output the schedule to the console (boolean)')
     parser.add_argument('date_string', type=str, default=None, help='A date string in the format dd_mm_yy (string)')
-
+ #   parser.add_argument('startOfTheYear', type=bool, default=False, help='If the date_string is the start of the year (boolean)')
+#    parser.add_argument('endOfTheYear', type=bool, default=False, help='If the date_string is the end of the year (boolean)')
 
     def get(self):
         args = self.parser.parse_args()
         date_string = args.get('date_string')
+        print(args)
         if date_string is not None:
             input_date = datetime.strptime(date_string, "%d_%m_%y").date()
             today = datetime.now().date()
             print(input_date, today)
 
             if input_date >= today:
-                print("Date is in the future")
                 schedule = {"error": "Date is in the future"}, 404
             else:
-                print("Date is in the past")
                 schedule = get_week_schedule_json(date_string)
         else:
-            print("No date provided")
             schedule = get_week_schedule_json(date_string)
 
+        print(schedule)
         if 404 in schedule:
             if 'username' in session and 'password' in session:
                 username = session['username']

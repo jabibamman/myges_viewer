@@ -56,7 +56,7 @@ class MyGesScraper:
             return True
 
     def get_schedule(self, to_json=True, to_Console=False, startOfTheYear=False, endOfTheYear=False,
-                     date_string=None):
+                     date_string=None,bot=None):
         """
         Récupère le planning de l'utilisateur
         Les ID des boutons sont calendar : (previousMonth, nextMonth, currentDate)
@@ -92,7 +92,8 @@ class MyGesScraper:
                 self.logger.info('Start of the year already scraped, skipping')
                 return
 
-        if date_string is not None or date_string != "":
+        if date_string is not None:
+            self.logger.info('Date string is not empty, scraping only one week')
             target_date = datetime.strptime(date_string, "%d_%m_%y").replace(hour=0, minute=0, second=0)
             print(current_week_start)
             current_week_start = current_week_start.replace(hour=0, minute=0, second=0)

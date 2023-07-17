@@ -195,11 +195,11 @@ def get_course_details(driver, event_title, event_time, event_px):
 
 def get_week_schedule_json(date_string):
     if not date_string:
-        return {"error": "No date provided"}, 400
+        return {"error": "No date provided"}, 404
 
     date_string = date_string.replace("-", "_").replace(" ", "_").replace(":", "_")
     date_string = date_string.lstrip("0")
-
+ 
     filename = f"data/{username}/schedule/semaine_du_{date_string}.json"
     if os.path.exists(filename):
         data = load_json(filename)
