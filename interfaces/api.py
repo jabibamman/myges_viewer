@@ -152,7 +152,7 @@ class Lessons(Resource):
 @api.response(400, 'Bad request')
 @api.doc(params={'year': 'A year string, e.g. "1", "2", "3", "4", "5"',
                  'promotion': 'A promotion string, e.g. "AL", "AL2", "ESGI"',
-                 'semester_string': 'A semester string "1" or "2"'})
+                 'semester': 'A semester string "1" or "2"'})
 class StudentDirectory(Resource):
     def get(self, year, promotion, semester):
         directory = get_student_directory_json(year, promotion, semester)
@@ -167,7 +167,7 @@ class StudentDirectory(Resource):
             login = scraper.login()
 
             if login:
-                scraper.get_schedule()
+                scraper.get_students_directory()
                 driver.quit()
                 directory = get_student_directory_json(year, promotion, semester)
                 return directory
@@ -176,7 +176,7 @@ class StudentDirectory(Resource):
 @ns.route('/directory/teacher')
 @api.response(200, 'Successful')
 @api.response(400, 'Bad request')
-class StudentDirectory(Resource):
+class TeacherDirectory(Resource):
     def get(self):
         directory = get_teacher_directory_json()
         if 404 not in directory:

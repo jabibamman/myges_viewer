@@ -50,11 +50,13 @@ def write_html(soup, filename):
     with open(filename, 'w', encoding='utf-8') as file:
         file.write(html)
 
-def write_to_json(final_dict, filename):
+def write_to_json(final_dict, filename, directory="out"):
     log.get_logger().info(f"Writing data to {filename}")
-    with open(f"data/{filename}", 'w', encoding='utf-8') as f:
-        json.dump(final_dict, f, indent=4)
+    if not os.path.exists(f"data/{username}/{directory}"):
+        os.makedirs(f"data/{username}/{directory}")
 
+    with open(f"data/{username}/{directory}/{filename}", 'w', encoding='utf-8') as f:
+        json.dump(final_dict, f, indent=4)
 
 def week_to_date_string(year, week_number):
     date = datetime.strptime(f'{year} {week_number} 1', "%Y %W %w")

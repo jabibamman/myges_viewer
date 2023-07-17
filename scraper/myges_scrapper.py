@@ -11,7 +11,7 @@ from utils import marks_utils as mu
 from utils import lessons_utils as lu
 from utils import logger_utils as log
 from utils import global_utils as util
-from utils.config_utils import discord_channel
+from utils.config_utils import discord_channel, username
 from utils import directory_utils as du
 from utils.global_utils import write_to_json
 import discord
@@ -561,21 +561,21 @@ class MyGesScraper:
         active_button = wait_for_element(self.driver, By.CSS_SELECTOR, 'div.ui-state-active')
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/3AL2_2s.json')
+        write_to_json({"students": arr}, f'{username}/directory/3AL2_2s.json', directory="directory")
 
         al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
-        al_button.click()
+        al_button.click() 
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/3AL_2s.json')
+        write_to_json({"students": arr}, f'{username}/directory/3AL_2s.json', directory="directory")
 
         y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y3_button.click()
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/3ESGI_2s.json')
+        write_to_json({"students": arr}, f'{username}/directory/3ESGI_2s.json', directory="directory")
 
         unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
         unfold_button.click()
@@ -583,14 +583,14 @@ class MyGesScraper:
         grade4_select.click()
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/4AL_1s.json')
+        write_to_json({"students": arr}, f'{username}/directory/4AL_1s.json', directory="directory")
 
         y4_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y4_button.click()
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/4ESGI_1s.json')
+        write_to_json({"students": arr}, f'{username}/directory/4ESGI_1s.json', directory="directory")
 
         unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
         unfold_button.click()
@@ -598,24 +598,24 @@ class MyGesScraper:
         grade3_select.click()
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/3AL2_1s.json')
+        write_to_json({"students": arr}, f'{username}/directory/3AL2_1s.json', directory="directory")
 
         al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
         al_button.click()
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/3AL_1s.json')
+        write_to_json({"students": arr}, f'{username}/directory/3AL_1s.json', directory="directory")
 
         y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
                                      '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
         y3_button.click()
 
         arr = du.get_students_info(self.driver)
-        write_to_json({"students": arr}, 'directory/3ESGI_1s.json')
+        write_to_json({"students": arr}, f'{username}/directory/3ESGI_1s.json', directory="directory")
 
     def get_teachers_directory(self):
         self.driver.get('https://myges.fr/student/student-teacher-directory')
 
         arr = du.get_teachers_info(self.driver)
-        write_to_json({"teachers": arr}, 'directory/teacher-2022-2023.json')
+        write_to_json({"teachers": arr}, f'{username}/directory/teacher-2022-2023.json', directory="directory")
