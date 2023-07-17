@@ -11,8 +11,6 @@ from scraper.myges_scrapper import MyGesScraper
 from scraper.selenium_utils import initialise_selenium
 from utils import logger_utils as log
 
-print("\n----------> here 1 <------------\n")
-
 async def get_marks_periodicly(bot):
     
     logger = log.get_logger()

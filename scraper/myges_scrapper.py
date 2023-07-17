@@ -18,7 +18,6 @@ from utils.config_utils import discord_channel
 
 def compare_tabs(array1, array2):
     if len(array1) != len(array2):
-        print("Les tableaux ne font pas la même taille")
         return False, []
 
     obj_diff = []
@@ -398,7 +397,7 @@ class MyGesScraper:
                 await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
 
                 for obj in obj_diff:
-                    print("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
+                    self.logger.info("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
                     await channel.send("Les notes suivantes pour le semestre " + semester + " ont changés !")
 
                     if obj['cc1'] != "":
@@ -479,11 +478,11 @@ class MyGesScraper:
                 await channel.send("**Vous avez de nouveaux supports de cours pour le semestre " + semester + " :**")
 
                 for obj in obj_diff:
-                    print("Vous avez un nouveau cours en '" + obj['class'] + "'")
+                    self.logger.info("Vous avez un nouveau cours en '" + obj['class'] + "'")
                     await channel.send("Vous avez un nouveau cours en '" + obj['class'] + "'")
 
                     for file_obj in obj['files']:
-                        print(file_obj['name'] + " : " + file_obj['link'])
+                        self.logger.info(file_obj['name'] + " : " + file_obj['link'])
                         await channel.send(file_obj['name'] + " : " + file_obj['link'])
 
                 lu.write_to_json(lessons, "lessons_{}.json".format(year + "_semester_" + semester), directory="lessons")
