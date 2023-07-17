@@ -63,7 +63,7 @@ def get_teachers_info(driver):
 
 
 def get_student_directory_json(year='3', promotion='ESGI', semester='1'):
-    filename = f"data/directory/{year}{promotion}_{semester}s.json"
+    filename = f"data/{username}/directory/{year}{promotion}_{semester}s.json"
     if os.path.exists(filename):
         data = load_json(filename)
         return data, 200
