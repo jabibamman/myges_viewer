@@ -462,7 +462,30 @@ class MyGesScraper:
         json_lessons = lu.get_lessons_json(year, semester)
 
         if 404 in json_lessons:
-            self.get_lessons(year, semester)
+            lessons = self.get_lessons(year, semester)
+
+            channel = await bot.fetch_channel(discord_channel)
+
+            if channel is None:
+                self.logger.error("Channel not found")
+                return
+
+            embed = discord.Embed(title=f"Voici vos support de cours pour le semestre {semester} :",
+                        description="",
+                        color=discord.Color.blue())
+            await channel.send(embed=embed)
+
+            for obj in lessons:
+                if len(obj['files']) != 0:
+                    embed = discord.Embed(title=obj['class'] + " : ",
+                            description="",
+                            color=discord.Color.blue())
+                    for file_obj in obj['files']:
+                        self.logger.info(file_obj['name'] + " : " + file_obj['link'])
+                        embed.add_field(name="", value=file_obj['name'] + " : " + file_obj['link'], inline=False)
+
+                    await channel.send(embed=embed)
+
         else:
             is_equal, obj_diff = compare_tabs(lessons, json_lessons[0])
 
