@@ -54,7 +54,7 @@ def run_bot_and_scraper():
     asyncio.run(bot_and_scraper())
 
 if __name__ == '__main__':
-    #t1 = threading.Thread(target=run_bot_and_scraper)
-    #t1.start()
+    t1 = threading.Thread(target=run_bot_and_scraper)
+    t1.start()
 
     app.run(debug=True)

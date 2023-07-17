@@ -397,12 +397,42 @@ class MyGesScraper:
         json_marks = mu.get_marks_json(year, semester)
 
         if 404 in json_marks:
-            self.get_marks(year, semester)
+            marks = self.get_marks(year, semester)
+
+            channel = await bot.fetch_channel(discord_channel)
+
+            if channel is None:
+                self.logger.error("Channel not found")
+                return
+
+            embed = discord.Embed(title=f"Voici vos notes pour le semestre " + semester + " !",
+                        description="",
+                        color=discord.Color.blue())
+            await channel.send(embed=embed)
+
+            for obj in marks:
+                embed = discord.Embed(title=obj['class_name'] + " : " + obj['teacher'],
+                        description="coef : " + obj['coef'] + ", etcs : " + obj['ects'],
+                        color=discord.Color.blue())
+
+                if obj['cc1'] != "":
+                    embed.add_field(name="", value="CC1 :" + obj['cc1'], inline=False)
+
+                if obj['cc2'] != "":
+                    embed.add_field(name="", value="CC2 :" + obj['cc2'], inline=False)
+
+                if obj['cc3'] != "":
+                    embed.add_field(name="", value="CC3 :" + obj['cc3'], inline=False)
+
+                if obj['exam'] != "":
+                    embed.add_field(name="", value="Examen :" + obj['exam'], inline=False)
+
+                await channel.send(embed=embed)
         else:
             is_equal, obj_diff = compare_tabs(marks, json_marks[0])
 
             if is_equal:
-                self.logger.info("Les notes n'ont pas changés !")
+                print("Les notes n'ont pas changés !")
             else:
                 channel = await bot.fetch_channel(discord_channel)
 
@@ -410,28 +440,26 @@ class MyGesScraper:
                     self.logger.error("Channel not found")
                     return
 
-                self.logger.info("Les notes suivantes pour le semestre " + semester + " ont changés !")
-                await channel.send("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
+                embed = discord.Embed(title=f"Les notes suivantes pour le semestre " + semester + " ont changés !",
+                          description="",
+                          color=discord.Color.blue())
 
                 for obj in obj_diff:
-                    self.logger.info("Vous avez une nouvelle note en '" + obj['class_name'] + "'")
-                    await channel.send("Les notes suivantes pour le semestre " + semester + " ont changés !")
+                    embed.add_field(name=obj['class_name'] + " : " + obj['teacher'], value="coef : " + obj['coef'] + ", etcs : " + obj['ects'], inline=False)
 
                     if obj['cc1'] != "":
-                        self.logger.info("CC1 :", obj['cc1'])
-                        await channel.send("CC1 :" + obj['cc1'])
+                        embed.add_field(name="", value="CC1 :" + obj['cc1'], inline=False)
+
                     if obj['cc2'] != "":
-                        self.logger.info("CC2 :", obj['cc2'])
-                        await channel.send("CC2 :" + obj['cc2'])
+                        embed.add_field(name="", value="CC2 :" + obj['cc2'], inline=False)
 
                     if obj['cc3'] != "":
-                        self.logger.info("CC3 :", obj['cc3'])
-                        await channel.send("CC3 :" + obj['cc3'])
+                        embed.add_field(name="", value="CC3 :" + obj['cc3'], inline=False)
 
                     if obj['exam'] != "":
-                        self.logger.info("Examen :", obj['exam'])
-                        await channel.send("Examen :" + obj['exam'])
+                        embed.add_field(name="", value="Examen :" + obj['exam'], inline=False)
 
+                await channel.send(embed=embed)
                 mu.write_to_json(marks, "marks_{}.json".format(year + "_semester_" + semester), directory="marks")
         return marks
 
@@ -497,7 +525,6 @@ class MyGesScraper:
                             description="",
                             color=discord.Color.blue())
                     for file_obj in obj['files']:
-                        self.logger.info(file_obj['name'] + " : " + file_obj['link'])
                         embed.add_field(name="", value=file_obj['name'] + " : " + file_obj['link'], inline=False)
 
                     await channel.send(embed=embed)
@@ -506,7 +533,7 @@ class MyGesScraper:
             is_equal, obj_diff = compare_tabs(lessons, json_lessons[0])
 
             if is_equal:
-                self.logger.info("Les cours n'ont pas changés !")
+                sprint("Les cours n'ont pas changés !")
             else:
                 channel = await bot.fetch_channel(discord_channel)
 
@@ -518,14 +545,10 @@ class MyGesScraper:
                           description="",
                           color=discord.Color.blue())
 
-                
-
-                self.logger.info("**Vous avez de nouveaux supports de cours pour le semestre " + semester + " :**")
 
                 for obj in obj_diff:
                     embed.add_field(name=obj['class'] + " : ", value="", inline=False)
                     for file_obj in obj['files']:
-                        self.logger.info(file_obj['name'] + " : " + file_obj['link'])
                         embed.add_field(name="", value=file_obj['name'] + " : " + file_obj['link'], inline=False)
 
                 await channel.send(embed=embed)
