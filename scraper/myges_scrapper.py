@@ -1,7 +1,5 @@
-import json
 import locale
 from datetime import datetime
-import re
 import time
 
 from bs4 import BeautifulSoup
@@ -14,6 +12,8 @@ from utils import lessons_utils as lu
 from utils import logger_utils as log
 from utils import global_utils as util
 from utils.config_utils import discord_channel
+from utils import directory_utils as du
+from utils.global_utils import write_to_json
 import discord
 
 
@@ -76,8 +76,8 @@ class MyGesScraper:
             self.logger.info('Login successful, current url is: ' + self.driver.current_url)
             return True
 
-    def get_schedule(self, to_json=True, to_mongo=False, to_Console=False, startOfTheYear=False, endOfTheYear=False,
-                     date_string="17_07_23"):
+    def get_schedule(self, to_json=True, to_Console=False, startOfTheYear=False, endOfTheYear=False,
+                     date_string=None,bot=None):
         """
         Récupère le planning de l'utilisateur
         Les ID des boutons sont calendar : (previousMonth, nextMonth, currentDate)
@@ -89,6 +89,8 @@ class MyGesScraper:
         """
 
         # TODO, on load une seule fois sur le startOfTheYear (quand on a pas chargé les json), sinon on parcourt le endOfTheYear en le passant en False
+        final_dict = {}
+
         planning_link = self.driver.find_element_by_xpath('//a[contains(text(),"Plannings")]')
         planning_link.click()
         time.sleep(4)
@@ -108,29 +110,41 @@ class MyGesScraper:
             if not util.check_existing_json_files_for_week_range(current_week_start.year, 1, current_week_start_string):
                 self.logger.info('No json files found, starting scraping')
             else:
-                self.logger.info('Json files found, skipping scraping for the start of the year')
+                self.logger.info('Start of the year already scraped, skipping')
                 return
 
-        if date_string:
-            target_date = datetime.strptime(date_string, "%d_%m_%y")
+        if date_string is not None:
+            self.logger.info('Date string is not empty, scraping only one week')
+            target_date = datetime.strptime(date_string, "%d_%m_%y").replace(hour=0, minute=0, second=0)
+            print(current_week_start)
+            current_week_start = current_week_start.replace(hour=0, minute=0, second=0)
             weeks_diff = util.week_difference(current_week_start, target_date)
+
+            if current_week_start.weekday() == 6:  # Sunday
+                weeks_diff += 1 if weeks_diff < 0 else -1
+
 
             log.get_logger().info('Weeks diff: ' + str(weeks_diff))
             log.get_logger().info('Target date: ' + target_date.strftime("%d_%m_%y"))
             log.get_logger().info('Current week start: ' + current_week_start.strftime("%d_%m_%y"))
 
-            if weeks_diff > 0:
-                navigation_button = self.driver.find_element_by_id('calendar:nextMonth')
-                for _ in range(weeks_diff):
-                    navigation_button.click()
-                    time.sleep(10)
-            elif weeks_diff < 0:
-                navigation_button = self.driver.find_element_by_id('calendar:previousMonth')
-                for _ in range(abs(weeks_diff)):
-                    navigation_button.click()
-                    time.sleep(10)
+            if target_date.strftime("%d_%m_%y") == current_week_start.strftime("%d_%m_%y"):
+                is_same_week = True
+                num_weeks = 1
 
-            num_weeks = weeks_diff
+            if weeks_diff != 0:
+                if weeks_diff > 0:
+                    navigation_button = self.driver.find_element_by_id('calendar:nextMonth')
+                    for _ in range(weeks_diff):
+                        navigation_button.click()
+                        time.sleep(10)
+                elif weeks_diff < 0:
+                    navigation_button = self.driver.find_element_by_id('calendar:previousMonth')
+                    for _ in range(abs(weeks_diff)):
+                        navigation_button.click()
+                        time.sleep(10)
+
+                num_weeks = weeks_diff
 
         for _ in range(num_weeks):
             self.logger.info('Weeks left: ' + str(num_weeks - _))
@@ -165,7 +179,10 @@ class MyGesScraper:
             px_day = su.get_event_lefts(soup, "fc-event")
             px_week = su.get_jours_par_position(soup, "fc-event")
 
+            self.logger.debug('px_day: ' + str(px_day))
             px_to_weekday = {str(px): weekday for weekday, px in px_week.items()}
+
+            self.logger.debug('px_to_weekday: ' + str(px_to_weekday))
 
             final_dict = {}
 
@@ -179,6 +196,8 @@ class MyGesScraper:
 
             px_day_without_duplicates = list(dict.fromkeys(px_day))
 
+            self.logger.debug('px_day_without_duplicates: ' + str(px_day_without_duplicates))
+
             for i in range(len(px_day_without_duplicates)):
                 if px_day[i] is None:
                     px_day[i] = px_day_without_duplicates[i]
@@ -187,14 +206,11 @@ class MyGesScraper:
             combined = su.get_combined_data(event_times, event_titles, px_day)
 
             final_dict = su.build_final_dict(self.driver, combined, px_to_weekday, joursDeLaSemaine)
+
             final_dict = su.sort_final_dict(final_dict)
 
             if to_json:
                 su.write_to_json(final_dict, "semaine_du_{}.json".format(formated_date), directory="schedule")
-
-            if to_mongo:
-                # su.write_to_mongo(final_dict) # TODO: not implemented yet
-                pass
 
             if to_Console:
                 # TODO: not done yet
@@ -515,3 +531,68 @@ class MyGesScraper:
                 await channel.send(embed=embed)
                 lu.write_to_json(lessons, "lessons_{}.json".format(year + "_semester_" + semester), directory="lessons")
         return lessons
+
+    def get_students_directory(self):
+        self.driver.get('https://myges.fr/student/student-directory')
+
+        active_button = wait_for_element(self.driver, By.CSS_SELECTOR, 'div.ui-state-active')
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL2_2s.json')
+
+        al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
+        al_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL_2s.json')
+
+        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y3_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3ESGI_2s.json')
+
+        unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
+        unfold_button.click()
+        grade4_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(1)')
+        grade4_select.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/4AL_1s.json')
+
+        y4_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y4_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/4ESGI_1s.json')
+
+        unfold_button = wait_for_element(self.driver, By.CSS_SELECTOR, '.ui-selectonemenu-trigger')
+        unfold_button.click()
+        grade3_select = wait_for_element(self.driver, By.CSS_SELECTOR, 'li.ui-selectonemenu-item:nth-child(3)')
+        grade3_select.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL2_1s.json')
+
+        al_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(3) > div:nth-child(1) > div:nth-child(2)')
+        al_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3AL_1s.json')
+
+        y3_button = wait_for_element(self.driver, By.CSS_SELECTOR,
+                                     '#puidOptions > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(5) > div:nth-child(1) > div:nth-child(2)')
+        y3_button.click()
+
+        arr = du.get_students_info(self.driver)
+        write_to_json({"students": arr}, 'directory/3ESGI_1s.json')
+
+    def get_teachers_directory(self):
+        self.driver.get('https://myges.fr/student/student-teacher-directory')
+
+        arr = du.get_teachers_info(self.driver)
+        write_to_json({"teachers": arr}, 'directory/teacher-2022-2023.json')

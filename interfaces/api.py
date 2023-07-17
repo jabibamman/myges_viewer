@@ -1,13 +1,14 @@
-from flask import Flask, session
-from flask_restx import Api, Resource
+from datetime import datetime
 
+from flask import Flask, session
+from flask_restful import reqparse
+from flask_restx import Api, Resource
 from scraper import initialise_selenium, MyGesScraper
+from utils.directory_utils import get_teacher_directory_json, get_student_directory_json
 from utils.schedule_utils import get_week_schedule_json
 from utils.marks_utils import get_marks_json
 from utils.lessons_utils import get_lessons_json
 
-app = Flask(__name__)
-api = Api(app)
 
 app = Flask(__name__)
 api = Api(app, version='1.0', title='MyGes API', description='A simple API to fetch MyGes data')
@@ -20,6 +21,7 @@ ns = api.namespace('myges', description='MyGes operations')
 login_parser = api.parser()
 login_parser.add_argument('username', type=str, required=True, help='Username for MyGes', location='json')
 login_parser.add_argument('password', type=str, required=True, help='Password for MyGes', location='json')
+
 
 @ns.route('/login')
 class Login(Resource):
@@ -43,13 +45,41 @@ class Login(Resource):
             return {'message': 'Login failed'}, 401
 
 
-@ns.route('/week/<string:date_string>')
+@ns.route('/week/')
 @api.response(200, 'Successful')
 @api.response(400, 'Bad request')
-@api.doc(params={'date_string': 'A date string in the format dd_mm_yy'})
+@api.doc(params={
+                    'date_string': 'A date string in the format dd_mm_yy',
+                 #   'startOfTheYear': 'If the date_string is the start of the year',
+                #    'endOfTheYear': 'If the date_string is the end of the year',
+                    'to_json': 'Output the schedule be in JSON format',
+                    'to_Console': 'Output the schedule to the console',
+})
 class Week(Resource):
-    def get(self, date_string):
-        schedule = get_week_schedule_json(date_string)
+    parser = reqparse.RequestParser()  # Initialiser l'analyseur de requête
+    parser.add_argument('to_json', type=bool, default=False, help='Output the schedule be in JSON format (boolean)')
+    parser.add_argument('to_Console', type=bool, default=False, help='Output the schedule to the console (boolean)')
+    parser.add_argument('date_string', type=str, default=None, help='A date string in the format dd_mm_yy (string)')
+ #   parser.add_argument('startOfTheYear', type=bool, default=False, help='If the date_string is the start of the year (boolean)')
+#    parser.add_argument('endOfTheYear', type=bool, default=False, help='If the date_string is the end of the year (boolean)')
+
+    def get(self):
+        args = self.parser.parse_args()
+        date_string = args.get('date_string')
+        print(args)
+        if date_string is not None:
+            input_date = datetime.strptime(date_string, "%d_%m_%y").date()
+            today = datetime.now().date()
+            print(input_date, today)
+
+            if input_date >= today:
+                schedule = {"error": "Date is in the future"}, 404
+            else:
+                schedule = get_week_schedule_json(date_string)
+        else:
+            schedule = get_week_schedule_json(date_string)
+
+        print(schedule)
         if 404 in schedule:
             if 'username' in session and 'password' in session:
                 username = session['username']
@@ -59,13 +89,16 @@ class Week(Resource):
                 login = scraper.login()
 
                 if login:
-                    schedule = scraper.get_schedule(to_json=False, to_mongo=True, to_Console=False,
-                                                    startOfTheYear=True, endOfTheYear=False,
-                                                    date_string=date_string)
-                    driver.quit()
+                    schedule = scraper.get_schedule(
+                        to_json=args['to_json'],
+                        to_Console=args['to_Console'],
+                        startOfTheYear=False,
+                        endOfTheYear=False,
+                        date_string=args['date_string']
+                    )
                     return schedule
-        else:
             return schedule
+
 
 @ns.route('/marks/year/<string:year_string>/semester/<string:semester_string>')
 @api.response(200, 'Successful')
@@ -112,3 +145,52 @@ class Lessons(Resource):
                     return lessons
         else:
             return lessons
+
+
+@ns.route('/directory/student/year/<string:year>/promotion/<string:promotion>/semester/<string:semester>')
+@api.response(200, 'Successful')
+@api.response(400, 'Bad request')
+@api.doc(params={'year': 'A year string, e.g. "1", "2", "3", "4", "5"',
+                 'promotion': 'A promotion string, e.g. "AL", "AL2", "ESGI"',
+                 'semester_string': 'A semester string "1" or "2"'})
+class StudentDirectory(Resource):
+    def get(self, year, promotion, semester):
+        directory = get_student_directory_json(year, promotion, semester)
+        if 404 not in directory:
+            return directory
+
+        if 'username' in session and 'password' in session:
+            username = session['username']
+            password = session['password']
+            driver = initialise_selenium(headless=False)
+            scraper = MyGesScraper(driver, username, password)
+            login = scraper.login()
+
+            if login:
+                scraper.get_schedule()
+                driver.quit()
+                directory = get_student_directory_json(year, promotion, semester)
+                return directory
+
+
+@ns.route('/directory/teacher')
+@api.response(200, 'Successful')
+@api.response(400, 'Bad request')
+class StudentDirectory(Resource):
+    def get(self):
+        directory = get_teacher_directory_json()
+        if 404 not in directory:
+            return directory
+
+        if 'username' in session and 'password' in session:
+            username = session['username']
+            password = session['password']
+            driver = initialise_selenium(headless=False)
+            scraper = MyGesScraper(driver, username, password)
+            login = scraper.login()
+
+            if login:
+                scraper.get_teachers_directory()
+                driver.quit()
+                directory = get_teacher_directory_json()
+                return directory

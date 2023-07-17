@@ -1,6 +1,5 @@
 import asyncio
 import threading
-
 import discord
 from flask import Flask
 
@@ -26,6 +25,23 @@ async def get_marks_periodicly(bot):
             logger.error("Login failed")
         await asyncio.sleep(300)
 
+async def get_schedule_periodicly(bot):
+    logger = log.get_logger()
+
+    while True:
+        driver = initialise_selenium(headless=False)
+        scraper = MyGesScraper(driver, username, password)
+        login = scraper.login()
+        if login:
+            schedule = await scraper.get_schedule(startOfTheYear=False, date_string="17_07_23",bot=bot)
+            if 404 in schedule :
+                logger.error("Schedule not found")
+
+
+        else:
+            logger.error("Login failed")
+        await asyncio.sleep(300)
+
 async def bot_and_scraper():
     bot_token = secret_discord
     intents = discord.Intents.default()
@@ -38,7 +54,7 @@ def run_bot_and_scraper():
     asyncio.run(bot_and_scraper())
 
 if __name__ == '__main__':
-    t1 = threading.Thread(target=run_bot_and_scraper)
-    t1.start()
+    #t1 = threading.Thread(target=run_bot_and_scraper)
+    #t1.start()
 
     app.run(debug=True)

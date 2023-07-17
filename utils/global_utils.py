@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 import os
 
@@ -49,6 +50,11 @@ def write_html(soup, filename):
     with open(filename, 'w', encoding='utf-8') as file:
         file.write(html)
 
+def write_to_json(final_dict, filename):
+    log.get_logger().info(f"Writing data to {filename}")
+    with open(f"data/{filename}", 'w', encoding='utf-8') as f:
+        json.dump(final_dict, f, indent=4)
+
 
 def week_to_date_string(year, week_number):
     date = datetime.strptime(f'{year} {week_number} 1', "%Y %W %w")
@@ -68,10 +74,8 @@ def check_existing_json_files_for_week_range(year, start_week, end_date_string):
                                           end_date_string) - 1  # -1 because we don't want to check the current week
     print("end_week:", end_week, ",start_week:", start_week, ",end_date_string:", end_date_string)
 
-
     for week in range(start_week, end_week):
         date_string = week_to_date_string(year, week)
-        print("test:", date_string)
         filename = f"data/{username}/schedule/semaine_du_{date_string}.json"
 
         if not os.path.exists(filename):
