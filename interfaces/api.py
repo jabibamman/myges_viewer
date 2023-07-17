@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from flask import Flask, session
+from flask_restful import reqparse
 from flask_restx import Api, Resource
 
 from scraper import initialise_selenium, MyGesScraper
@@ -42,13 +45,39 @@ class Login(Resource):
             return {'message': 'Login failed'}, 401
 
 
-@ns.route('/week/<string:date_string>')
+@ns.route('/week/')
 @api.response(200, 'Successful')
 @api.response(400, 'Bad request')
-@api.doc(params={'date_string': 'A date string in the format dd_mm_yy'})
+@api.doc(params={
+                    'date_string': 'A date string in the format dd_mm_yy',
+                    'to_json': 'Output the schedule be in JSON format',
+                    'to_Console': 'Output the schedule to the console',
+})
 class Week(Resource):
-    def get(self, date_string):
-        schedule = get_week_schedule_json(date_string)
+    parser = reqparse.RequestParser()  # Initialiser l'analyseur de requête
+    parser.add_argument('to_json', type=bool, default=False, help='Output the schedule be in JSON format (boolean)')
+    parser.add_argument('to_Console', type=bool, default=False, help='Output the schedule to the console (boolean)')
+    parser.add_argument('date_string', type=str, default=None, help='A date string in the format dd_mm_yy (string)')
+
+
+    def get(self):
+        args = self.parser.parse_args()
+        date_string = args.get('date_string')
+        if date_string is not None:
+            input_date = datetime.strptime(date_string, "%d_%m_%y").date()
+            today = datetime.now().date()
+            print(input_date, today)
+
+            if input_date >= today:
+                print("Date is in the future")
+                schedule = {"error": "Date is in the future"}, 404
+            else:
+                print("Date is in the past")
+                schedule = get_week_schedule_json(date_string)
+        else:
+            print("No date provided")
+            schedule = get_week_schedule_json(date_string)
+
         if 404 in schedule:
             if 'username' in session and 'password' in session:
                 username = session['username']
@@ -58,12 +87,14 @@ class Week(Resource):
                 login = scraper.login()
 
                 if login:
-                    schedule = scraper.get_schedule(to_json=False, to_mongo=True, to_Console=False,
-                                                    startOfTheYear=True, endOfTheYear=False,
-                                                    date_string=date_string)
-                    driver.quit()
+                    schedule = scraper.get_schedule(
+                        to_json=args['to_json'],
+                        to_Console=args['to_Console'],
+                        startOfTheYear=False,
+                        endOfTheYear=False,
+                        date_string=args['date_string']
+                    )
                     return schedule
-        else:
             return schedule
 
 @ns.route('/marks/year/<string:year_string>/semester/<string:semester_string>')
@@ -88,3 +119,4 @@ class Marks(Resource):
                     return marks
         else:
             return marks
+

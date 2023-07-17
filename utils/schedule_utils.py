@@ -21,14 +21,14 @@ def get_jours_de_la_semaine(thead):
     joursDeLaSemaine = {days[datetime.strptime("/".join(jour), "%d/%m/%y").weekday()]: "/".join(jour) for jour in
                         joursDeLaSemaine}
 
-    # logging.getLogger('logger').debug('Days of the week: ' + str(joursDeLaSemaine))
+    log.get_logger().debug('Days of the week: ' + str(joursDeLaSemaine))
     return joursDeLaSemaine
 
 
 def get_jours_de_la_semaine_json(thead):
     """Get days of the week and write them to a json file."""
     joursDeLaSemaine = get_jours_de_la_semaine(thead)
-    write_to_json(joursDeLaSemaine,"jours_de_la_semaine.json", directory="")
+    write_to_json(joursDeLaSemaine, "jours_de_la_semaine.json", directory="")
 
 
 def get_jours_par_position(soup, class_):
@@ -73,6 +73,8 @@ def get_event_data(soup):
     event_titles = [tag.text for tag in div.find_all(class_="fc-event-title")]
     event_times = [tag.text for tag in div.find_all(class_="fc-event-time")]
 
+    log.get_logger().debug(f"Event titles: {event_titles}")
+
     return event_titles, event_times
 
 
@@ -85,11 +87,18 @@ def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
     for event_time, event_title, event_px in combined:
         matiere, duration, intervenant, salle, type, modality = get_course_details(driver, event_title, event_time,
                                                                                    event_px)
-        if matiere == "" or intervenant == "":
+
+        if matiere == "" and intervenant == "":
+            log.get_logger().error(f"Course details not found for event: {event_title}")
             continue
 
         day = f"{px_to_weekday.get(event_px)} - {joursDeLaSemaine.get(px_to_weekday.get(event_px))}"
+
+        if px_to_weekday.get(event_px) == None:
+            log.get_logger().error(f"Day not found for event: {event_title}")
+
         if day:
+            log.get_logger().debug(f"Day: {day}, matiere: {matiere}, {px_to_weekday.get(event_px)}")
             if day not in final_dict:
                 final_dict[day] = []
             final_dict[day].append({
@@ -103,6 +112,8 @@ def build_final_dict(driver, combined, px_to_weekday, joursDeLaSemaine):
                 'commentaire': "",
                 'sizePX': event_px
             })
+        else:
+            log.get_logger().error(f"Day not found for event: {event_title}")
 
     return final_dict
 
@@ -135,8 +146,17 @@ def get_course_details(driver, event_title, event_time, event_px):
         event_title_element = event.find_element(By.XPATH, ".//div[@class='fc-event-title']")
         if not event_title_element:
             continue
-        if event_title_element.text.split('...', 1)[0] + '...' != event_title.split('...', 1)[0] + '...':
-            continue
+
+        if '...' in event_title and '...' in event_title_element.text:
+            if event_title_element.text.split('...', 1)[0] + '...' != event_title.split('...', 1)[0] + '...':
+                continue
+        else:
+            split_title = re.search(r'^(.*?)\d+', event_title).group(1)
+            split_title_element_match = re.search(r'^(.*?)\d+', str(event_title_element.text))
+            if split_title_element_match:
+                split_title_element = split_title_element_match.group(1)
+                if event_title_element.text != split_title_element:
+                    continue
 
         event_time_element = event.find_element(By.XPATH, ".//div[@class='fc-event-time']")
         if not event_time_element:
@@ -158,6 +178,7 @@ def get_course_details(driver, event_title, event_time, event_px):
             event.click()
 
         time.sleep(1)
+
         matiere = driver.find_element(By.XPATH, "//span[@id='matiere']")
         duration = driver.find_element(By.XPATH, "//span[@id='duration']")
         intervenant = driver.find_element(By.XPATH, "//span[@id='intervenant']")
@@ -166,10 +187,16 @@ def get_course_details(driver, event_title, event_time, event_px):
         modality = driver.find_element(By.XPATH, "//span[@id='modality']")
         commentaire = driver.find_element(By.XPATH, "//span[@id='commentaire']")
 
+        log.get_logger().debug(f": {matiere.text}, {duration.text}, {intervenant.text}, {salle.text}, {type.text}, {modality.text}\n..\n")
+
         return matiere.text, duration.text, intervenant.text, salle.text, type.text, modality.text
     return "", "", "", "", "", ""
 
+
 def get_week_schedule_json(date_string):
+    if not date_string:
+        return {"error": "No date provided"}, 400
+
     date_string = date_string.replace("-", "_").replace(" ", "_").replace(":", "_")
     date_string = date_string.lstrip("0")
 
