@@ -7,6 +7,7 @@ from flask_restx import Api, Resource
 from scraper import initialise_selenium, MyGesScraper
 from utils.schedule_utils import get_week_schedule_json
 from utils.marks_utils import get_marks_json
+from utils.lessons_utils import get_lessons_json
 
 app = Flask(__name__)
 api = Api(app)
@@ -122,3 +123,25 @@ class Marks(Resource):
         else:
             return marks
 
+@ns.route('/lessons/year/<string:year_string>/semester/<string:semester_string>')
+@api.response(200, 'Successful')
+@api.response(400, 'Bad request')
+@api.doc(params={'year_string': 'A year string in the format 2020-2021',
+                 'semester_string': 'A semester string "1" or "2"'})
+class Lessons(Resource):
+    def get(self, year_string, semester_string):
+        lessons = get_lessons_json(year_string,semester_string)
+        if 404 in lessons:
+            if 'username' in session and 'password' in session:
+                username = session['username']
+                password = session['password']
+                driver = initialise_selenium(headless=False)
+                scraper = MyGesScraper(driver, username, password)
+                login = scraper.login()
+
+                if login:
+                    lessons = scraper.get_lessons(year_string, semester_string)
+                    driver.quit()
+                    return lessons
+        else:
+            return lessons

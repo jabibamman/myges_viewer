@@ -12,13 +12,15 @@ from scraper.selenium_utils import initialise_selenium
 from utils import logger_utils as log
 
 async def get_marks_periodicly(bot):
+    
     logger = log.get_logger()
 
     while True:
-        driver = initialise_selenium(headless=False)
+        driver = initialise_selenium(headless=True)
         scraper = MyGesScraper(driver, username, password)
         login = scraper.login()
         if login:
+            await scraper.get_lessons_periodicly("2022-2023", "1", bot=bot)
             await scraper.get_marks_periodicly("2022-2023", "1", bot=bot)
         else:
             logger.error("Login failed")
@@ -46,7 +48,6 @@ async def bot_and_scraper():
     intents = discord.Intents.default()
     intents.message_content = True
     bot = MyBot(command_prefix='!', intents=intents)
-
     asyncio.create_task(get_marks_periodicly(bot))
     await bot.start(bot_token)
 
